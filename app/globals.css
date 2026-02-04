@@ -1,29 +1,169 @@
 @import "tailwindcss";
-@plugin './hero.ts';
+@plugin '../hero.ts';
 /* Note: You may need to change the path to fit your project structure */
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Colors */
+  --color-rose-soft: #e8a4a4;
+  --color-rose-deep: #c77d7d;
+  --color-coral: #d4a89a;
+  --color-peach: #f5c7b8;
+  --color-lavender: #c4b5d0;
+
+  /* Backgrounds */
+  --color-bg-cream: #faf8f6;
+  --color-bg-blush: #fef7f4;
+  --color-bg-warm: #fff9f7;
+
+  /* Text */
+  --color-text-primary: #2d2a2e;
+  --color-text-secondary: #6b6369;
+  --color-text-muted: #9a9197;
+
+  /* System */
+  --background: #faf8f6;
+  --foreground: #2d2a2e;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px rgba(200, 125, 125, 0.08);
+  --shadow-card: 0 2px 12px rgba(200, 125, 125, 0.06);
+  --shadow-hover: 0 8px 30px rgba(200, 125, 125, 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-jakarta), var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, serif;
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Custom colors for Tailwind */
+  --color-rose-soft: #e8a4a4;
+  --color-rose-deep: #c77d7d;
+  --color-coral: #d4a89a;
+  --color-peach: #f5c7b8;
+  --color-lavender: #c4b5d0;
+  --color-cream: #faf8f6;
+  --color-blush: #fef7f4;
+  --color-warm: #fff9f7;
+  --color-charcoal: #2d2a2e;
+  --color-muted: #6b6369;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+/* Typography utilities */
+.font-serif {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+.font-sans {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+/* Heading styles */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection styling */
+::selection {
+  background-color: var(--color-rose-soft);
+  color: var(--color-text-primary);
+}
+
+/* Custom gradient backgrounds */
+.bg-gradient-warm {
+  background: linear-gradient(135deg, var(--color-bg-blush) 0%, var(--color-bg-cream) 100%);
+}
+
+.bg-gradient-rose {
+  background: linear-gradient(135deg, var(--color-rose-soft) 0%, var(--color-coral) 100%);
+}
+
+/* Card styling */
+.card-soft {
+  background: white;
+  border: 1px solid rgba(200, 125, 125, 0.1);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+}
+
+.card-soft:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Button transitions */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-rose-soft) 0%, var(--color-rose-deep) 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(200, 125, 125, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Subtle animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-rose-soft);
+  outline-offset: 2px;
+}
+
+/* Responsive text sizing */
+.text-balance {
+  text-wrap: balance;
 }
