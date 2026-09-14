@@ -3,66 +3,40 @@
 <div align="center">
   <img src="./public/CampusHeartLogo.png" alt="Campus Hearts Logo" width="120" height="120" />
   
-  ### Real connection takes time — and that's okay.
+  ### A dating app exclusively for your college.
   
-  *A slow dating platform for college students in Goa*
+  *Verified college-email login, swipe-style exploring, and mutual love requests*
   
   [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat&logo=next.js)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-19.2.3-61DAFB?style=flat&logo=react)](https://react.dev/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ECF8E?style=flat&logo=supabase)](https://supabase.com/)
 </div>
 
 ---
 
 ## 📖 Overview
 
-**Campus Hearts** is a revolutionary slow-dating platform designed exclusively for college students in Goa, India. In a world dominated by instant gratification and superficial swipes, Campus Hearts brings back the lost art of thoughtful connection through digital letters.
+**Campus Hearts** is a campus-exclusive dating app. Only students with a verified college email address can create an account, so the whole community is people from your own campus.
 
-Unlike traditional dating apps that optimize for engagement, we optimize for **meaning**. Our platform encourages users to:
-- Write thoughtful, intentional letters instead of instant messages
-- Connect based on personality and words, not appearances
-- Build genuine relationships through patience and authenticity
-- Experience a calmer, safer dating environment
+**How it works:**
+1. Sign in with your college email (OTP, no passwords) and complete a profile — 3 photos, name, year of study, location, interests, phone number, and a short bio.
+2. Female users explore male profiles one at a time, Bumble-style, and can send a **love request** to anyone they're interested in.
+3. If the male recipient accepts the love request, both sides' phone numbers are revealed so they can continue chatting on WhatsApp/SMS.
 
-**Why Slow Dating?**
-- ✍️ **Patience Over Impulse** - Letters take time, building anticipation and intention
-- 💭 **Depth Over Surface** - Connect through words first, without instant photo judgments
-- 🛡️ **Safety Over Speed** - A slower platform creates a calmer, more honest space
+Only accepted profiles ever see each other's number — everyone else's contact info stays private.
 
 ---
 
 ## ✨ Key Features
 
-### 🎯 Core Functionality
-
-- **📬 Letters, Not Swipes**  
-  Express yourself through thoughtful digital letters that take time to compose and arrive, encouraging meaningful communication.
-
-- **🌅 Words Before Looks**  
-  No profile photos upfront. Connect based on personality and written expression. Visuals come later, naturally.
-
-- **🕊️ Emotionally Safe Space**  
-  Slower pace means fewer impulsive reactions, no instant replies, no pressure — just space to be honest.
-
-- **🎓 Campus Exclusive**  
-  Only verified college students in Goa can join, creating a smaller, more familiar community where trust can grow.
-
-- **💫 Beautiful UI/UX**  
-  Thoughtfully designed with elegant animations, smooth transitions, and a warm color palette that promotes calm and connection.
-
-### 🔐 Authentication & User Management
-
-- Secure signup and login system
-- Profile creation and management
-- User verification for campus students
-
-### 📝 Letter Writing Experience
-
-- Dedicated letter composition interface
-- Recommended matches based on compatibility
-- Public letters section for community sharing
-- Delayed delivery system to encourage thoughtfulness
+- **🎓 College-Email Only** — Signup is restricted to your college's email domain, enforced at the database level, not just the UI.
+- **🔐 Passwordless Auth** — Email OTP login via Supabase Auth.
+- **🃏 Swipe to Explore** — Female users browse a stack of male profiles and send love requests; male users cannot browse the female profile list at all (enforced by Postgres Row Level Security, not just app logic).
+- **💌 Love Requests** — Male users see incoming requests and can accept or decline.
+- **📱 Phone Reveal on Match** — Numbers are hidden until a love request is accepted, then revealed with a one-tap WhatsApp link.
+- **🖼️ 3-Photo Profiles** — Photos are uploaded to Supabase Storage, scoped per user.
 
 ---
 
@@ -80,6 +54,10 @@ Campus Hearts is built with modern, production-ready technologies:
 - **[HeroUI/React 2.8.8](https://www.heroui.com/)** - Beautiful React component library
 - **[Framer Motion 12.29.3](https://www.framer.com/motion/)** - Production-ready animation library
 - **[GSAP 3.14.2](https://greensock.com/gsap/)** - Professional-grade animation platform
+
+### Backend
+- **[Supabase](https://supabase.com/)** - Postgres database, email-OTP Auth, Storage for profile photos, and Row Level Security to enforce who can see whom
+- **[@supabase/ssr](https://supabase.com/docs/guides/auth/server-side/nextjs)** - Session handling in Next.js Server Components and route proxy
 
 ### 3D & Graphics
 - **[Three.js 0.182.0](https://threejs.org/)** - 3D graphics library
@@ -119,16 +97,19 @@ Before you begin, ensure you have the following installed:
    bun install
    ```
 
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory:
+3. **Set up Supabase**
+
+   Create a project at [supabase.com](https://supabase.com), then run the SQL in [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) in the Supabase SQL editor. Before running it, edit the `is_college_email` function to check your college's real email domain.
+
+4. **Set up environment variables**
+
+   Copy `.env.local.example` to `.env.local` and fill in your Supabase project URL and anon key (found in Project Settings → API):
    ```env
-   # Add your environment variables here
-   # NEXT_PUBLIC_API_URL=your_api_url
-   # DATABASE_URL=your_database_url
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-4. **Run the development server**
+5. **Run the development server**
    ```bash
    npm run dev
    # or
@@ -139,7 +120,7 @@ Before you begin, ensure you have the following installed:
    bun dev
    ```
 
-5. **Open your browser**
+6. **Open your browser**
    
    Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
 
@@ -152,30 +133,34 @@ The page will auto-reload when you make changes. You can start editing by modify
 ```
 CampusHearts/
 ├── app/                      # Next.js App Router directory
-│   ├── (auth)/              # Authentication routes (grouped)
-│   │   ├── login/           # Login page
-│   │   └── signup/          # Signup page
-│   ├── (main)/              # Main application routes (grouped)
-│   │   ├── open-letters/    # Public letters section
-│   │   ├── recommaded/      # Recommended matches
-│   │   └── write-letter/    # Letter composition
-│   ├── profile/             # User profile management
+│   ├── (auth)/              # Auth routes (grouped)
+│   │   ├── login/           # Email-OTP login/signup
+│   │   └── signup/          # Redirects to /login (OTP handles both)
+│   ├── (main)/              # Gated app routes (grouped, share AppNavbar)
+│   │   ├── explore/         # Female-only swipe/explore feed
+│   │   ├── requests/        # Male-only incoming love requests
+│   │   └── matches/         # Accepted matches + phone reveal
+│   ├── profile/             # Edit own profile
+│   ├── profile-setup/       # First-time onboarding form
 │   ├── layout.tsx           # Root layout component
 │   ├── page.tsx             # Home page
 │   ├── providers.tsx        # Global providers (theme, etc.)
 │   └── globals.css          # Global styles
 │
-├── components/              # Reusable React components
-│   ├── auth/               # Authentication-related components
-│   ├── home/               # Landing page sections
-│   │   ├── HomeSection.tsx     # Hero section
-│   │   ├── FeatureSection.tsx  # Features showcase
-│   │   ├── AboutSection.tsx    # About/Values section
-│   │   ├── TestimonialSection.tsx # User testimonials
-│   │   ├── FAQSection.tsx      # Frequently asked questions
-│   │   └── CTASection.tsx      # Call-to-action
-│   ├── Navbar.tsx          # Navigation bar
-│   └── Footer.tsx          # Footer component
+├── components/               # Reusable React components
+│   ├── auth/                # Login component
+│   ├── explore/              # Swipe deck
+│   ├── requests/              # Love request list
+│   ├── matches/                # Match list + phone reveal
+│   ├── profile/                # Profile edit form
+│   ├── home/                  # Landing page sections
+│   ├── AppNavbar.tsx          # Nav for logged-in app routes
+│   ├── Navbar.tsx             # Landing page navbar
+│   └── Footer.tsx             # Footer component
+│
+├── lib/supabase/             # Supabase browser/server client helpers + shared types
+├── supabase/migrations/      # SQL: schema, RLS policies, storage bucket, email gate
+├── proxy.ts                  # Route protection (auth/gender/profile-completion gating)
 │
 ├── public/                  # Static assets
 │   └── CampusHeartLogo.png # Application logo
