@@ -1,9 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { uploadPhotos } from "@/lib/uploadPhotos";
 import type { Gender } from "@/lib/supabase/types";
+import {
+  BIO_MAX,
+  Field,
+  FormMessage,
+  FormSection,
+  GenderToggle,
+  InterestsInput,
+  PhotoPicker,
+  YearPicker,
+  type PhotoSlot,
+} from "@/components/profile/ProfileFields";
+import { LockIcon } from "@/components/ui/icons";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -15,26 +29,19 @@ export default function ProfileSetupPage() {
   const [location, setLocation] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
-  const [interests, setInterests] = useState("");
-  const [photos, setPhotos] = useState<(File | null)[]>([null, null, null]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function handlePhotoChange(index: number, file: File | null) {
-    setPhotos((prev) => {
-      const next = [...prev];
-      next[index] = file;
-      return next;
-    });
-  }
+  const photoCount = photos.filter(Boolean).length;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const chosenPhotos = photos.filter((p): p is File => p !== null);
-    if (chosenPhotos.length !== 3) {
-      setError("Please upload exactly 3 photos.");
+    if (photoCount !== 3) {
+      setError("Please add all 3 photos.");
       return;
     }
 
@@ -50,22 +57,11 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    const photoUrls: string[] = [];
-    for (let i = 0; i < chosenPhotos.length; i++) {
-      const file = chosenPhotos[i];
-      const path = `${user.id}/${i}-${Date.now()}.${file.name.split(".").pop()}`;
-      const { error: uploadError } = await supabase.storage
-        .from("profile-photos")
-        .upload(path, file, { upsert: true });
-
-      if (uploadError) {
-        setError(uploadError.message);
-        setLoading(false);
-        return;
-      }
-
-      const { data: publicUrl } = supabase.storage.from("profile-photos").getPublicUrl(path);
-      photoUrls.push(publicUrl.publicUrl);
+    const { urls, error: uploadError } = await uploadPhotos(supabase, user.id, photos);
+    if (uploadError) {
+      setError(uploadError);
+      setLoading(false);
+      return;
     }
 
     const { error: upsertError } = await supabase.from("profiles").upsert({
@@ -76,11 +72,8 @@ export default function ProfileSetupPage() {
       location,
       phone_number: phoneNumber,
       bio,
-      interests: interests
-        .split(",")
-        .map((i) => i.trim())
-        .filter(Boolean),
-      photo_urls: photoUrls,
+      interests,
+      photo_urls: urls,
       is_complete: true,
     });
 
@@ -96,115 +89,112 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="mb-2 font-serif text-2xl text-charcoal">Complete your profile</h1>
-      <p className="mb-6 text-sm text-muted">
-        This is what other students will see. Add 3 photos and a bit about yourself.
-      </p>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">I am a</label>
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value as Gender)}
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          >
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-          </select>
+    <div className="min-h-screen bg-gradient-warm">
+      <div className="mx-auto max-w-xl px-4 pt-10 pb-16">
+        <div className="mb-8 text-center">
+          <Image src="/CampusHeartLogo.png" alt="" width={56} height={56} className="mx-auto" />
+          <p className="eyebrow mt-4">Almost there</p>
+          <h1 className="mt-2 font-serif text-3xl text-charcoal sm:text-4xl">Set up your profile</h1>
+          <p className="mx-auto mt-2 max-w-sm text-muted">
+            This is what other students see. It takes about two minutes.
+          </p>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">Name</label>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <FormSection title="About you">
+            <Field label="I am a">
+              <GenderToggle value={gender} onChange={setGender} />
+            </Field>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">Year of study</label>
-          <input
-            type="number"
-            min={1}
-            max={6}
-            required
-            value={yearOfStudy}
-            onChange={(e) => setYearOfStudy(Number(e.target.value))}
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">Location</label>
-          <input
-            required
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Panaji, Goa"
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">Phone number</label>
-          <input
-            required
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="Only shared after a match accepts"
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">Interests</label>
-          <input
-            value={interests}
-            onChange={(e) => setInterests(e.target.value)}
-            placeholder="music, football, reading (comma separated)"
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">About you</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            className="w-full rounded-lg border border-rose-soft/30 bg-white px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-charcoal">3 photos</label>
-          <div className="grid grid-cols-3 gap-3">
-            {[0, 1, 2].map((i) => (
+            <Field label="First name" htmlFor="name">
               <input
-                key={i}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handlePhotoChange(i, e.target.files?.[0] ?? null)}
-                className="text-xs"
+                id="name"
+                required
+                autoComplete="given-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input-field"
               />
-            ))}
-          </div>
-        </div>
+            </Field>
 
-        {error && <p className="text-sm text-rose-deep">{error}</p>}
+            <Field label="Year of study">
+              <YearPicker value={yearOfStudy} onChange={setYearOfStudy} />
+            </Field>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn-primary w-full rounded-lg px-4 py-3 font-medium text-white disabled:opacity-60"
-        >
-          {loading ? "Saving..." : "Save & continue"}
-        </button>
-      </form>
+            <Field label="Where you're based" htmlFor="location">
+              <input
+                id="location"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Panaji, Goa"
+                className="input-field"
+              />
+            </Field>
+          </FormSection>
+
+          <FormSection title="Your photos" description={`Add 3 photos. The first one is your main photo. (${photoCount}/3)`}>
+            <PhotoPicker value={photos} onChange={setPhotos} />
+          </FormSection>
+
+          <FormSection title="A little more">
+            <Field
+              label="Bio"
+              htmlFor="bio"
+              hint={`${bio.length}/${BIO_MAX}. What's a perfect Sunday for you?`}
+            >
+              <textarea
+                id="bio"
+                value={bio}
+                maxLength={BIO_MAX}
+                onChange={(e) => setBio(e.target.value)}
+                rows={4}
+                placeholder="Say something that makes someone smile."
+                className="input-field resize-none"
+              />
+            </Field>
+
+            <Field label="Interests" htmlFor="interests" hint="Press Enter or comma after each one. Up to 8.">
+              <InterestsInput value={interests} onChange={setInterests} />
+            </Field>
+          </FormSection>
+
+          <FormSection title="Contact">
+            <Field
+              label="WhatsApp number"
+              htmlFor="phone"
+              hint={
+                <span className="flex items-center gap-1.5">
+                  <LockIcon width={14} height={14} />
+                  Private. Only shared once you both say yes.
+                </span>
+              }
+            >
+              <input
+                id="phone"
+                type="tel"
+                required
+                autoComplete="tel"
+                inputMode="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="input-field"
+              />
+            </Field>
+          </FormSection>
+
+          <FormMessage error={error} />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full rounded-full px-4 py-4 text-lg font-medium text-white disabled:opacity-60"
+          >
+            {loading ? "Saving your profile…" : "Save & start"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

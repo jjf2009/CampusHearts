@@ -1,92 +1,47 @@
 // components/home/CTASection.tsx
 "use client";
-import { Button } from "@heroui/react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function CTASection() {
-    return (
-        <section className="relative px-6 py-24 overflow-hidden">
-            {/* Warm gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-rose-soft/20 via-peach/15 to-lavender/10"></div>
+  return (
+    <section className="bg-cream px-4 py-20 sm:px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-rose-soft via-rose-deep to-[#9e6a86] px-6 py-16 text-center sm:px-12 sm:py-20"
+      >
+        <div className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 -bottom-20 h-72 w-72 rounded-full bg-peach/30 blur-3xl" />
 
-            {/* Decorative blurs */}
-            <div className="absolute top-10 left-10 w-64 h-64 bg-rose-soft/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-10 right-10 w-80 h-80 bg-lavender/15 rounded-full blur-3xl"></div>
-
-            <div className="relative mx-auto max-w-3xl text-center">
-                {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-8"
-                >
-                    <Image
-                        src="/CampusHeartLogo.png"
-                        alt="Campus Heart"
-                        width={80}
-                        height={80}
-                        className="mx-auto opacity-80"
-                    />
-                </motion.div>
-
-                {/* Headline */}
-                <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="font-serif text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-charcoal"
-                >
-                    Ready to write your first letter?
-                </motion.h2>
-
-                {/* Subtext */}
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    className="mt-6 text-lg text-muted max-w-xl mx-auto leading-relaxed"
-                >
-                    Someone is out there, waiting to hear from you.
-                    <br />
-                    Take the first step — no rush, no pressure.
-                </motion.p>
-
-                {/* CTA Button */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="mt-10"
-                >
-                    <Button
-                        as={Link}
-                        href="/signup"
-                        radius="full"
-                        size="lg"
-                        className="bg-gradient-to-r from-rose-soft to-rose-deep text-white font-medium px-10 py-6 text-lg shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
-                    >
-                        Find Your Match
-                    </Button>
-                </motion.div>
-
-                {/* Trust note */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                    className="mt-8 text-sm text-muted/60"
-                >
-                    Free to join · No credit card required · Exclusively for Goa students
-                </motion.p>
-            </div>
-        </section>
-    );
+        <div className="relative">
+          <Image
+            src="/CampusHeartLogo.png"
+            alt=""
+            width={64}
+            height={64}
+            className="mx-auto rounded-2xl bg-white/90 p-2"
+          />
+          <h2 className="mx-auto mt-8 max-w-2xl font-serif text-4xl font-medium tracking-tight text-white sm:text-5xl">
+            Your campus crush might already be here.
+          </h2>
+          <p className="mx-auto mt-5 max-w-md text-lg text-white/85">
+            Make your profile in two minutes and see who&apos;s around.
+          </p>
+          <Link
+            href="/login"
+            className="mt-10 inline-flex rounded-full bg-white px-10 py-4 text-lg font-medium text-rose-ink shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            Join Campus Heart
+          </Link>
+          <p className="mt-6 text-sm text-white/75">
+            Free · College email required · Goa colleges only
+          </p>
+        </div>
+      </motion.div>
+    </section>
+  );
 }

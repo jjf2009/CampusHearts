@@ -26,20 +26,20 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Campus Heart — Slow Dating for College Students in Goa",
-  description: "Write letters, not swipes. Campus Heart is a thoughtful dating space for college students in Goa. Connect through handwritten-style digital letters that take time to arrive.",
-  keywords: ["dating app", "college dating", "Goa", "slow dating", "letter dating", "campus heart"],
+  title: "Campus Heart — Dating for College Students in Goa",
+  description: "Campus Heart is a dating app just for verified college students in Goa. Women send love requests, men choose who to accept, and numbers are shared only when you both say yes.",
+  keywords: ["dating app", "college dating", "Goa", "student dating", "campus heart"],
   openGraph: {
-    title: "Campus Heart — Slow Dating for College Students in Goa",
-    description: "Write letters, not swipes. Connect through thoughtful letters that take time to arrive.",
+    title: "Campus Heart — Dating for College Students in Goa",
+    description: "Verified students only. She sends the love request, he accepts, you both say hi.",
     type: "website",
     locale: "en_IN",
     siteName: "Campus Heart",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Campus Heart — Slow Dating for College Students",
-    description: "Write letters, not swipes. Thoughtful dating for college students in Goa.",
+    title: "Campus Heart — Dating for College Students in Goa",
+    description: "Verified students only. She sends the love request, he accepts, you both say hi.",
   },
 };
 

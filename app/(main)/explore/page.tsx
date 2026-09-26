@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import ExploreDeck from "@/components/explore/ExploreDeck";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function ExplorePage() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function ExplorePage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-8">
-      <h1 className="mb-6 text-center font-serif text-2xl text-charcoal">Explore</h1>
+      <PageHeader title="Explore" subtitle="Like someone? Send a love request. They'll decide whether to match." />
       <ExploreDeck initialProfiles={profiles ?? []} />
     </div>
   );

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import RequestsList from "@/components/requests/RequestsList";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function RequestsPage() {
   const supabase = await createClient();
@@ -27,8 +28,12 @@ export default async function RequestsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="mb-6 text-center font-serif text-2xl text-charcoal">Love Requests</h1>
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <PageHeader
+        title="Love requests"
+        subtitle="Someone liked your profile. Accept to swap numbers."
+        count={requests.length}
+      />
       <RequestsList initialRequests={requests} />
     </div>
   );

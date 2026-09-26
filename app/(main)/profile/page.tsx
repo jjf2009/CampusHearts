@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
-import AppNavbar from "@/components/AppNavbar";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -21,12 +21,9 @@ export default async function ProfilePage() {
   if (!profile) redirect("/profile-setup");
 
   return (
-    <>
-      <AppNavbar />
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <h1 className="mb-6 text-center font-serif text-2xl text-charcoal">Your Profile</h1>
-        <ProfileEditForm profile={profile} />
-      </div>
-    </>
+    <div className="mx-auto max-w-xl px-4 py-8">
+      <PageHeader title="Your profile" subtitle="Keep it fresh. Changes show up right away." />
+      <ProfileEditForm profile={profile} />
+    </div>
   );
 }

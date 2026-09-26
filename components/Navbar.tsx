@@ -1,46 +1,66 @@
 // components/Navbar.tsx
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@heroui/react";
+
+const links = [
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#why", label: "Why us" },
+  { href: "#faq", label: "FAQ" },
+];
 
 export default function Navbar() {
-  return (
-    <nav className="w-full border-b border-rose-soft/20 bg-cream/90 backdrop-blur-md fixed top-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between">
+  const [scrolled, setScrolled] = useState(false);
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <nav
+      className={`fixed top-0 z-50 w-full transition-all ${
+        scrolled ? "border-b border-rose-soft/15 bg-cream/85 backdrop-blur-md" : "bg-transparent"
+      }`}
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <Link href="/" className="group flex items-center gap-2">
           <Image
             src="/CampusHeartLogo.png"
-            alt="Campus Heart Logo"
-            width={40}
-            height={40}
+            alt="Campus Heart logo"
+            width={36}
+            height={36}
             className="transition-transform group-hover:scale-105"
           />
-          <span className="text-xl font-serif font-medium tracking-tight text-charcoal">
-            Campus<span className="text-rose-deep">Heart</span>
+          <span className="font-serif text-xl font-medium tracking-tight text-charcoal">
+            Campus<span className="text-rose-ink">Heart</span>
           </span>
         </Link>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* Coming Soon Badge */}
-          <div className="hidden sm:flex items-center gap-2 text-sm px-4 py-2 rounded-full border border-rose-soft/30 text-muted bg-white/50">
-            <span className="w-2 h-2 rounded-full bg-rose-soft animate-pulse"></span>
-            Digital Letters · Coming Soon
-          </div>
+        <div className="hidden items-center gap-8 text-sm text-muted md:flex">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} className="transition hover:text-charcoal">
+              {link.label}
+            </a>
+          ))}
+        </div>
 
-          {/* Primary CTA */}
-          <Button
-            as={Link}
-            href="/signup"
-            radius="full"
-            size="md"
-            className="bg-gradient-to-r from-rose-soft to-rose-deep text-white font-medium px-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/login"
+            className="rounded-full px-4 py-2 text-sm font-medium text-charcoal transition hover:bg-white/70"
           >
-            Find Your Match
-          </Button>
+            Sign in
+          </Link>
+          <Link
+            href="/login"
+            className="btn-primary rounded-full px-5 py-2 text-sm font-medium text-white shadow-sm"
+          >
+            Join free
+          </Link>
         </div>
       </div>
     </nav>
