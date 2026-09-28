@@ -4,7 +4,7 @@ import CTASection from "@/components/home/CTASection";
 import FAQSection from "@/components/home/FAQSection";
 import FeatureSection from "@/components/home/FeatureSection";
 import HeroSection from "@/components/home/HomeSection";
-import TestimonialSection from "@/components/home/TestimonialSection";
+import ForYouSection from "@/components/home/ForYouSection";
 import Navbar from "@/components/Navbar";
 
 export default function Home() {
@@ -15,7 +15,7 @@ export default function Home() {
         <HeroSection />
         <FeatureSection />
         <AboutSection />
-        <TestimonialSection />
+        <ForYouSection />
         <FAQSection />
         <CTASection />
       </main>

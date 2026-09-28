@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+// Auth pages: logged-out only. Logged-in users get sent to their home screen.
+const AUTH_PATHS = ["/login", "/signup"];
+
+function homeFor(gender: string | undefined) {
+  return gender === "male" ? "/requests" : "/explore";
+}
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -30,9 +35,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
+  const isAuthPage = AUTH_PATHS.some((p) => path.startsWith(p));
+  const isLanding = path === "/";
 
-  if (!user && !isPublic) {
+  if (!user && !isAuthPage && !isLanding) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -43,21 +49,22 @@ export async function proxy(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (isPublic) {
+    if (!profile?.is_complete) {
+      if (path !== "/profile-setup") {
+        return NextResponse.redirect(new URL("/profile-setup", request.url));
+      }
+      return response;
+    }
+
+    if (isAuthPage || isLanding) {
+      return NextResponse.redirect(new URL(homeFor(profile.gender), request.url));
+    }
+
+    if (path.startsWith("/explore") && profile.gender !== "female") {
+      return NextResponse.redirect(new URL("/requests", request.url));
+    }
+    if (path.startsWith("/requests") && profile.gender !== "male") {
       return NextResponse.redirect(new URL("/explore", request.url));
-    }
-
-    if (!profile?.is_complete && path !== "/profile-setup") {
-      return NextResponse.redirect(new URL("/profile-setup", request.url));
-    }
-
-    if (profile?.is_complete) {
-      if (path.startsWith("/explore") && profile.gender !== "female") {
-        return NextResponse.redirect(new URL("/requests", request.url));
-      }
-      if (path.startsWith("/requests") && profile.gender !== "male") {
-        return NextResponse.redirect(new URL("/explore", request.url));
-      }
     }
   }
 

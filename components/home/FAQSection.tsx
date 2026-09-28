@@ -6,39 +6,44 @@ import { motion } from "framer-motion";
 const faqs = [
   {
     key: "1",
-    question: "Why letters instead of instant chat?",
+    question: "Who can join?",
     answer:
-      "Instant chat encourages impulsive, reactive communication. Letters slow things down and create space for thoughtfulness. When you know your message will take time to arrive, you write differently — more honestly, more intentionally.",
+      "Any student at a college in Goa with a valid college email address. You sign in with a one-time code sent to that email, so every account belongs to a real student.",
   },
   {
     key: "2",
-    question: "Why do letters take time to arrive?",
+    question: "Why can only women send love requests?",
     answer:
-      "The delay is a feature, not a limitation. It builds anticipation, reduces pressure, and encourages patience. Just like real letters, the waiting is part of the experience.",
+      "It keeps things calm and respectful. Women decide who they want to hear from, and men never get to message anyone who hasn't shown interest first.",
   },
   {
     key: "3",
-    question: "Is this only for college students in Goa?",
+    question: "When is my phone number shared?",
     answer:
-      "Yes. Campus Heart is built exclusively for students in Goa's colleges. Keeping the community smaller and local creates a safer, more relatable environment where genuine connections can form.",
+      "Only after a love request is accepted. Until then your number is hidden from everyone, and even then only your match can unlock it.",
   },
   {
     key: "4",
-    question: "Do I need to upload my photos?",
+    question: "What happens if I decline a request?",
     answer:
-      "No. Your profile focuses on words first. If you choose to share photos later, that happens naturally as trust builds — not as a first impression.",
+      "Nothing awkward. The request just disappears. The sender isn't told why, and they can't send you another one.",
   },
   {
     key: "5",
-    question: "Is Campus Heart free to use?",
+    question: "Can I change my profile later?",
     answer:
-      "Yes. The core experience is completely free during our beta phase. We believe connection shouldn't have a paywall.",
+      "Yes. You can update your photos, bio, interests and details from your profile page at any time.",
+  },
+  {
+    key: "6",
+    question: "Is Campus Heart free?",
+    answer: "Yes. It's completely free during our beta.",
   },
 ];
 
 export default function FAQSection() {
   return (
-    <section className="px-6 py-24 bg-blush">
+    <section id="faq" className="scroll-mt-20 bg-blush px-6 py-24">
       <div className="mx-auto max-w-3xl">
         {/* Section header */}
         <motion.div
@@ -48,12 +53,10 @@ export default function FAQSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <h2 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-charcoal">
-            Questions you might have
+          <p className="eyebrow">FAQ</p>
+          <h2 className="mt-3 font-serif text-4xl font-medium tracking-tight text-charcoal sm:text-5xl">
+            Good questions
           </h2>
-          <p className="mt-4 text-muted text-lg">
-            A few things to know before you start writing.
-          </p>
         </motion.div>
 
         {/* FAQ Accordion */}
@@ -67,7 +70,7 @@ export default function FAQSection() {
             variant="splitted"
             className="gap-4"
             itemClasses={{
-              base: "bg-white border border-rose-soft/15 shadow-sm rounded-xl px-6",
+              base: "bg-white border border-rose-soft/15 shadow-none rounded-2xl px-6",
               title: "font-medium text-charcoal text-base",
               trigger: "py-5",
               content: "text-muted pb-5 leading-relaxed",
