@@ -17,12 +17,6 @@ export default async function MatchesPage() {
 
   const otherIds = (accepted ?? []).map((r) => (r.sender_id === user!.id ? r.receiver_id : r.sender_id));
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("gender")
-    .eq("user_id", user!.id)
-    .maybeSingle();
-
   const { data: matchProfiles } = otherIds.length
     ? await supabase.from("profiles_public").select("*").in("user_id", otherIds)
     : { data: [] };
@@ -34,7 +28,7 @@ export default async function MatchesPage() {
         subtitle="You both said yes. Say hi on WhatsApp."
         count={matchProfiles?.length}
       />
-      <MatchesList profiles={matchProfiles ?? []} gender={me?.gender ?? "female"} />
+      <MatchesList profiles={matchProfiles ?? []} />
     </div>
   );
 }

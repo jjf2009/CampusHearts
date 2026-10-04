@@ -18,25 +18,38 @@
 
 ## 📖 Overview
 
-**Campus Hearts** is a campus-exclusive dating app. Only students with a verified college email address can create an account, so the whole community is people from your own campus.
+**Campus Hearts** is the go-to place to find a partner for **freshers night**. It's campus-only, built around a compatibility quiz, and keeps photos locked down.
 
 **How it works:**
-1. Sign in with your college email (OTP, no passwords) and complete a profile — 3 photos, name, year of study, location, interests, phone number, and a short bio.
-2. Female users explore male profiles one at a time, Bumble-style, and can send a **love request** to anyone they're interested in.
-3. If the male recipient accepts the love request, both sides' phone numbers are revealed so they can continue chatting on WhatsApp/SMS.
-
-Only accepted profiles ever see each other's number — everyone else's contact info stays private.
+1. **Sign in** with any email (OTP, no passwords).
+2. **Verify**:
+   - Seniors with a college email are verified automatically.
+   - Freshers, who have no ID card or activated college email yet, upload the **admission letter PDF**. The server reads the PDF and checks the college name, intake year, the student's name and admission number. One letter can only be linked to one account.
+3. **Build a profile**: 3 photos, a bio, interests, and a 10-question **freshers night quiz**.
+4. **Explore**: everyone sees verified profiles of the opposite gender, sorted by **compatibility %**. Like someone. If they like you back, it's an **instant match**. Otherwise they get a love request they can accept or decline.
+5. On a match, both sides can unlock each other's WhatsApp number.
 
 ---
 
 ## ✨ Key Features
 
-- **🎓 College-Email Only** — Signup is restricted to your college's email domain, enforced at the database level, not just the UI.
-- **🔐 Passwordless Auth** — Email OTP login via Supabase Auth.
-- **🃏 Swipe to Explore** — Female users browse a stack of male profiles and send love requests; male users cannot browse the female profile list at all (enforced by Postgres Row Level Security, not just app logic).
-- **💌 Love Requests** — Male users see incoming requests and can accept or decline.
-- **📱 Phone Reveal on Match** — Numbers are hidden until a love request is accepted, then revealed with a one-tap WhatsApp link.
-- **🖼️ 3-Photo Profiles** — Photos are uploaded to Supabase Storage, scoped per user.
+- **📄 Admission-letter verification**: `/api/verify-admission` extracts the text of the PDF (with `unpdf`) and auto-approves it if it matches. It is rate-limited to 5 attempts, and the PDF hash and admission number are unique per verified account. Letters are kept in a private bucket for audit.
+- **🎯 Compatibility matching**: `lib/matching.ts` scores each pair from 0 to 100:
+  - weighted quiz agreement (single-choice answers must match; scale answers score by distance),
+  - interest overlap (Jaccard),
+  - a small penalty for a different year of study,
+  - an optional "looking for the same thing" dealbreaker.
+- **🔐 Encrypted, hold-to-view photos**:
+  - Photos are AES-256-GCM encrypted server-side and stored in a **private** bucket.
+  - They're only decrypted by `/api/photos/...` for someone allowed to see that profile, with `no-store` caching.
+  - On screen they're drawn into a `<canvas>` (never an `<img>`) only **while the viewer presses and holds**.
+  - Each view is watermarked with the viewer's name and the time.
+  - The photo is cleared instantly on release, app switch, window blur or screenshot shortcuts (PrintScreen / Cmd+Shift+3/4/5).
+  - Photos are hidden when printing.
+- **💌 Mutual likes**: a database trigger turns two-way likes into an accepted match automatically.
+- **📱 Phone reveal on match**: numbers are only returned by `get_match_phone_number` for accepted matches.
+
+> **Honest limitation:** no website can fully stop a phone's own screenshot button or someone photographing the screen with a second phone. Campus Hearts makes saving photos hard and makes any leak **traceable** through the watermark.
 
 ---
 
@@ -99,14 +112,28 @@ Before you begin, ensure you have the following installed:
 
 3. **Set up Supabase**
 
-   Create a project at [supabase.com](https://supabase.com), then run the SQL in [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) in the Supabase SQL editor. Before running it, edit the `is_college_email` function to check your college's real email domain.
+   Create a project at [supabase.com](https://supabase.com), then run these in the Supabase SQL editor, in order (or use `supabase db push`):
+   - [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). Before running it, edit `is_college_email` to check your college's real email domain.
+   - [`supabase/migrations/0002_freshers.sql`](./supabase/migrations/0002_freshers.sql): admission-letter verification, both-ways browsing, mutual matches, and private photo storage.
+
+   > Photos uploaded before `0002` were stored unencrypted in a public bucket. Ask those users to re-upload their photos from the Profile page.
 
 4. **Set up environment variables**
 
-   Copy `.env.local.example` to `.env.local` and fill in your Supabase project URL and anon key (found in Project Settings → API):
+   Create `.env.local`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   # Server-only. Never expose this to the browser.
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+   # Admission-letter checks: comma-separated names that appear on your college's letters
+   COLLEGE_NAME_KEYWORDS=Goa College of Engineering,GEC
+   ADMISSION_YEAR=2026
+
+   # 32 random bytes, base64. Generate with: openssl rand -base64 32
+   # Keep it safe: if you lose it, every stored photo becomes unreadable.
+   PHOTO_ENCRYPTION_KEY=
    ```
 
 5. **Run the development server**

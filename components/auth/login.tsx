@@ -85,13 +85,13 @@ export default function Login() {
           </h2>
           <ul className="mt-8 space-y-4 text-charcoal/80">
             <li className="flex items-center gap-3">
-              <ShieldIcon className="text-rose-ink" /> Verified college students only
+              <ShieldIcon className="text-rose-ink" /> Verified students only (admission letter or college email)
             </li>
             <li className="flex items-center gap-3">
-              <HeartIcon className="text-rose-ink" /> She makes the first move
+              <HeartIcon className="text-rose-ink" /> Matched by a freshers night quiz
             </li>
             <li className="flex items-center gap-3">
-              <LockIcon className="text-rose-ink" /> Your number stays private until you match
+              <LockIcon className="text-rose-ink" /> Photos encrypted, hold-to-view only
             </li>
           </ul>
         </div>
@@ -123,13 +123,13 @@ export default function Login() {
               <>
                 <h1 className="font-serif text-3xl text-charcoal">Welcome</h1>
                 <p className="mt-2 text-muted">
-                  Sign in or create an account with your college email. We&apos;ll send you a 6-digit code.
+                  Sign in with any email you check. We&apos;ll send you a 6-digit code. Freshers: no college email yet? No problem.
                 </p>
 
                 <form onSubmit={sendCode} className="mt-8 space-y-4">
                   <div>
                     <label htmlFor="email" className="field-label">
-                      College email
+                      Email
                     </label>
                     <div className="relative">
                       <MailIcon
@@ -143,7 +143,7 @@ export default function Login() {
                         required
                         autoComplete="email"
                         autoFocus
-                        placeholder="you@yourcollege.ac.in"
+                        placeholder="you@gmail.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="input-field pl-11"
@@ -165,7 +165,7 @@ export default function Login() {
                 </form>
 
                 <p className="mt-6 text-xs leading-relaxed text-faint">
-                  Only verified college email addresses can join. No passwords to remember.
+                  College emails are verified instantly. Freshers verify with their admission letter PDF next. No passwords to remember.
                 </p>
               </>
             ) : (

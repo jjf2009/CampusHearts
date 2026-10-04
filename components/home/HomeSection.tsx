@@ -108,15 +108,15 @@ export default function HeroSection() {
             <br />
             from campus.
             <br />
-            <span className="text-rose-ink italic">She goes first.</span>
+            <span className="text-rose-ink italic">Before freshers night.</span>
           </motion.h1>
 
           <motion.p
             {...fadeUp(0.2)}
             className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted lg:mx-0"
           >
-            Campus Heart is a dating app just for verified students. Women send love requests, men choose who
-            to accept, and numbers are only shared once you both say yes.
+            Find your freshers night partner. Verify with your admission letter, take a quick vibe quiz, and
+            meet your most compatible batchmates first. Photos stay locked, and numbers are shared only when you both say yes.
           </motion.p>
 
           <motion.div
@@ -127,7 +127,7 @@ export default function HeroSection() {
               href="/login"
               className="btn-primary w-full rounded-full px-8 py-4 text-center text-lg font-medium text-white shadow-md sm:w-auto"
             >
-              Join with college email
+              Find my partner
             </Link>
             <a
               href="#how-it-works"
@@ -141,7 +141,7 @@ export default function HeroSection() {
             {...fadeUp(0.4)}
             className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted lg:justify-start"
           >
-            {["Free to join", "No passwords", "Private until you match"].map((item) => (
+            {["No ID card needed", "Quiz-based matching", "Locked photos"].map((item) => (
               <li key={item} className="flex items-center gap-1.5">
                 <CheckIcon width={16} height={16} className="text-rose-ink" />
                 {item}

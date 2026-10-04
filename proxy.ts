@@ -4,9 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 // Auth pages: logged-out only. Logged-in users get sent to their home screen.
 const AUTH_PATHS = ["/login", "/signup"];
 
-function homeFor(gender: string | undefined) {
-  return gender === "male" ? "/requests" : "/explore";
-}
+const HOME = "/explore";
+const VERIFY = "/verify";
+const SETUP = "/profile-setup";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -38,33 +38,31 @@ export async function proxy(request: NextRequest) {
   const isAuthPage = AUTH_PATHS.some((p) => path.startsWith(p));
   const isLanding = path === "/";
 
+  // API routes do their own auth checks and must never get an HTML redirect.
+  if (path.startsWith("/api/")) return response;
+
   if (!user && !isAuthPage && !isLanding) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("gender, is_complete")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const [{ data: verification }, { data: profile }] = await Promise.all([
+      supabase.from("verifications").select("status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("is_complete").eq("user_id", user.id).maybeSingle(),
+    ]);
 
+    // Step 1: prove you're a student (college email or admission letter).
+    if (verification?.status !== "verified") {
+      return path === VERIFY ? response : NextResponse.redirect(new URL(VERIFY, request.url));
+    }
+
+    // Step 2: finish your profile + quiz.
     if (!profile?.is_complete) {
-      if (path !== "/profile-setup") {
-        return NextResponse.redirect(new URL("/profile-setup", request.url));
-      }
-      return response;
+      return path === SETUP ? response : NextResponse.redirect(new URL(SETUP, request.url));
     }
 
-    if (isAuthPage || isLanding) {
-      return NextResponse.redirect(new URL(homeFor(profile.gender), request.url));
-    }
-
-    if (path.startsWith("/explore") && profile.gender !== "female") {
-      return NextResponse.redirect(new URL("/requests", request.url));
-    }
-    if (path.startsWith("/requests") && profile.gender !== "male") {
-      return NextResponse.redirect(new URL("/explore", request.url));
+    if (isAuthPage || isLanding || path === VERIFY || path === SETUP) {
+      return NextResponse.redirect(new URL(HOME, request.url));
     }
   }
 

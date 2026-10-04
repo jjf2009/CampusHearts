@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import type { PublicProfile } from "@/lib/supabase/types";
 import EmptyState from "@/components/ui/EmptyState";
+import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
 import { CapIcon, CheckIcon, InboxIcon, MapPinIcon, XIcon } from "@/components/ui/icons";
 
 interface RequestRow {
@@ -73,8 +74,8 @@ export default function RequestsList({ initialRequests }: { initialRequests: Req
         <EmptyState
           icon={<InboxIcon width={26} height={26} />}
           title="No requests yet"
-          description="When someone sends you a love request, it'll show up here. A great bio and clear photos help."
-          action={{ href: "/profile", label: "Polish your profile" }}
+          description="When someone sends you a love request, it'll show up here. Or go like someone first: if they like you back, it's an instant match."
+          action={{ href: "/explore", label: "Explore" }}
         />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
@@ -87,16 +88,11 @@ export default function RequestsList({ initialRequests }: { initialRequests: Req
                 className="surface flex flex-col overflow-hidden rounded-3xl"
               >
                 <div className="relative aspect-[4/3] bg-blush">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={sender.photo_urls[0]}
-                    alt={sender.name}
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute top-3 right-3 rounded-full bg-white/85 px-2.5 py-0.5 text-xs font-medium text-charcoal backdrop-blur-sm">
+                  <ProtectedPhoto path={sender.photo_urls[0]} alt={sender.name} className="absolute inset-0" />
+                  <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-white/85 px-2.5 py-0.5 text-xs font-medium text-charcoal backdrop-blur-sm">
                     {dateFormat.format(new Date(created_at))}
                   </span>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pt-12 pb-3 text-white">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pt-12 pb-3 text-white">
                     <h2 className="font-serif text-2xl text-white">{sender.name}</h2>
                     <div className="flex flex-wrap gap-x-3 text-sm text-white/90">
                       <span className="flex items-center gap-1">

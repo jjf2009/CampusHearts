@@ -3,8 +3,9 @@
 import { useState, type ReactNode } from "react";
 import type { Gender } from "@/lib/supabase/types";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
+import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
 
-/** A photo slot holds a new File, an already-uploaded URL, or nothing. */
+/** A photo slot holds a new File, an already-uploaded storage path, or nothing. */
 export type PhotoSlot = File | string | null;
 
 export const BIO_MAX = 300;
@@ -55,8 +56,8 @@ export function FormSection({
 
 export function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender) => void }) {
   const options: { value: Gender; label: string; hint: string }[] = [
-    { value: "female", label: "Woman", hint: "You browse profiles and send love requests" },
-    { value: "male", label: "Man", hint: "You receive love requests and choose who to accept" },
+    { value: "female", label: "Woman", hint: "You'll see men's profiles" },
+    { value: "male", label: "Man", hint: "You'll see women's profiles" },
   ];
 
   return (
@@ -183,6 +184,8 @@ function previewUrl(file: File) {
   return url;
 }
 
+const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp";
+
 function PhotoTile({
   slot,
   index,
@@ -192,42 +195,57 @@ function PhotoTile({
   index: number;
   onChange: (slot: PhotoSlot) => void;
 }) {
-  const preview = slot instanceof File ? previewUrl(slot) : slot;
-
   const inputId = `photo-${index}`;
+  const fileInput = (
+    <input
+      id={inputId}
+      type="file"
+      accept={PHOTO_ACCEPT}
+      className="sr-only"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) onChange(file);
+        e.target.value = "";
+      }}
+    />
+  );
 
   return (
     <div className="relative aspect-[3/4]">
-      <label
-        htmlFor={inputId}
-        className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition ${
-          preview
-            ? "border-transparent"
-            : "border-rose-soft/40 bg-blush text-rose-deep hover:border-rose-deep hover:bg-white"
-        }`}
-      >
-        {preview ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={preview} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
-        ) : (
-          <>
-            <CameraIcon width={24} height={24} />
-            <span className="mt-1 text-xs font-medium">{index === 0 ? "Main photo" : "Add photo"}</span>
-          </>
-        )}
-        <input
-          id={inputId}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onChange(file);
-            e.target.value = "";
-          }}
-        />
-      </label>
-      {preview && (
+      {typeof slot === "string" ? (
+        // Saved photos are encrypted; even your own is shown hold-to-view.
+        <>
+          <ProtectedPhoto path={slot} alt={`Photo ${index + 1}`} className="h-full w-full rounded-2xl" />
+          <label
+            htmlFor={inputId}
+            className="absolute bottom-2 right-2 cursor-pointer rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-charcoal"
+          >
+            Replace
+            {fileInput}
+          </label>
+        </>
+      ) : (
+        <label
+          htmlFor={inputId}
+          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition ${
+            slot
+              ? "border-transparent"
+              : "border-rose-soft/40 bg-blush text-rose-deep hover:border-rose-deep hover:bg-white"
+          }`}
+        >
+          {slot ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={previewUrl(slot)} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
+          ) : (
+            <>
+              <CameraIcon width={24} height={24} />
+              <span className="mt-1 text-xs font-medium">{index === 0 ? "Main photo" : "Add photo"}</span>
+            </>
+          )}
+          {fileInput}
+        </label>
+      )}
+      {slot && (
         <button
           type="button"
           onClick={() => onChange(null)}
@@ -237,8 +255,8 @@ function PhotoTile({
           <XIcon width={14} height={14} />
         </button>
       )}
-      {index === 0 && preview && (
-        <span className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-charcoal">
+      {index === 0 && slot && (
+        <span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-charcoal">
           Main
         </span>
       )}

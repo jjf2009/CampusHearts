@@ -38,7 +38,7 @@ export default function CTASection() {
             Join Campus Heart
           </Link>
           <p className="mt-6 text-sm text-white/75">
-            Free · College email required · Goa colleges only
+            Free · Admission letter or college email · Freshers welcome
           </p>
         </div>
       </motion.div>

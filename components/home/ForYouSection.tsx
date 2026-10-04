@@ -5,22 +5,22 @@ import { CheckIcon } from "@/components/ui/icons";
 
 const sides = [
   {
-    label: "For her",
-    title: "You choose who to meet",
+    label: "Find your partner",
+    title: "Go with someone who gets you",
     points: [
-      "Browse profiles of guys from colleges around Goa",
-      "Send a love request to anyone you like",
-      "Nobody can message you unless you reach out first",
+      "Take the quiz: dance floor or deep talks, Bollywood or EDM",
+      "See your most compatible freshers first, with a match %",
+      "Like them back and it's a match, no awkward DMs",
     ],
     accent: "from-rose-soft/30 to-peach/30",
   },
   {
-    label: "For him",
-    title: "Be worth choosing",
+    label: "Stay safe",
+    title: "Your photos stay yours",
     points: [
-      "Make a profile that shows who you really are",
-      "Get love requests from women who are interested",
-      "Accept the ones you like and start talking",
+      "Photos are encrypted and never sent as a downloadable image",
+      "They only show while someone presses and holds",
+      "Every view is watermarked with the viewer's name",
     ],
     accent: "from-lavender/40 to-peach/20",
   },
@@ -37,7 +37,7 @@ export default function ForYouSection() {
           transition={{ duration: 0.5 }}
           className="mx-auto mb-14 max-w-2xl text-center"
         >
-          <p className="eyebrow">Two sides, one match</p>
+          <p className="eyebrow">Freshers night, sorted</p>
           <h2 className="mt-3 font-serif text-4xl font-medium tracking-tight text-charcoal sm:text-5xl">
             Here&apos;s what to expect
           </h2>

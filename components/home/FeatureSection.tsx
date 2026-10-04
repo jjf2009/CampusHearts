@@ -1,28 +1,28 @@
 // components/home/FeatureSection.tsx
 "use client";
 import { motion } from "framer-motion";
-import { HeartIcon, MailIcon, UserIcon, WhatsAppIcon } from "@/components/ui/icons";
+import { FileIcon, HeartIcon, UserIcon, WhatsAppIcon } from "@/components/ui/icons";
 
 const steps = [
   {
-    icon: MailIcon,
-    title: "Sign in with your college email",
-    description: "We send a one-time code to your college address. No passwords, and no one from outside campus.",
+    icon: FileIcon,
+    title: "Sign in & verify",
+    description: "Log in with any email, then upload your admission letter PDF. It's checked automatically in seconds.",
   },
   {
     icon: UserIcon,
     title: "Make your profile",
-    description: "Three photos, a short bio and a few interests. It takes about two minutes.",
+    description: "Three photos, a short bio and the freshers night quiz. About three minutes.",
   },
   {
     icon: HeartIcon,
-    title: "She sends a love request",
-    description: "Women browse profiles and send requests. Men see who's interested and accept or decline.",
+    title: "Like your best matches",
+    description: "Your most compatible people show up first. If they like you back, it's an instant match.",
   },
   {
     icon: WhatsAppIcon,
     title: "Match and say hi",
-    description: "Once a request is accepted, you can both unlock each other's WhatsApp number and take it from there.",
+    description: "Unlock each other's WhatsApp number and plan your freshers night together.",
   },
 ];
 

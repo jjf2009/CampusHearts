@@ -2,17 +2,12 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Gender, PublicProfile } from "@/lib/supabase/types";
+import type { PublicProfile } from "@/lib/supabase/types";
 import EmptyState from "@/components/ui/EmptyState";
+import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
 import { CapIcon, CheckIcon, CopyIcon, LockIcon, MapPinIcon, SparkIcon, WhatsAppIcon } from "@/components/ui/icons";
 
-export default function MatchesList({
-  profiles,
-  gender,
-}: {
-  profiles: PublicProfile[];
-  gender: Gender;
-}) {
+export default function MatchesList({ profiles }: { profiles: PublicProfile[] }) {
   const supabase = createClient();
   const [phones, setPhones] = useState<Record<string, string | null>>({});
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -44,16 +39,8 @@ export default function MatchesList({
       <EmptyState
         icon={<SparkIcon width={26} height={26} />}
         title="No matches yet"
-        description={
-          gender === "female"
-            ? "When someone accepts your love request, they'll appear here."
-            : "Accept a love request and your match will appear here."
-        }
-        action={
-          gender === "female"
-            ? { href: "/explore", label: "Keep exploring" }
-            : { href: "/requests", label: "Check requests" }
-        }
+        description="Like someone who likes you back, or accept a love request, and they'll appear here."
+        action={{ href: "/explore", label: "Keep exploring" }}
       />
     );
   }
@@ -71,11 +58,11 @@ export default function MatchesList({
           const phone = phones[profile.user_id];
           return (
             <li key={profile.user_id} className="surface flex gap-4 rounded-3xl p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={profile.photo_urls[0]}
+              <ProtectedPhoto
+                path={profile.photo_urls[0]}
                 alt={profile.name}
-                className="h-24 w-20 shrink-0 rounded-2xl object-cover"
+                hint={false}
+                className="h-24 w-20 shrink-0 rounded-2xl"
               />
               <div className="flex min-w-0 flex-1 flex-col">
                 <h2 className="truncate font-serif text-xl text-charcoal">{profile.name}</h2>

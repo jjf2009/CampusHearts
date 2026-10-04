@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
-import type { Gender } from "@/lib/supabase/types";
+import type { Gender, QuizAnswers } from "@/lib/supabase/types";
 import {
   BIO_MAX,
   Field,
@@ -18,6 +18,8 @@ import {
   type PhotoSlot,
 } from "@/components/profile/ProfileFields";
 import { LockIcon } from "@/components/ui/icons";
+import QuizFields, { quizProgress } from "@/components/profile/QuizFields";
+import { QUIZ, isQuizComplete, sanitizeAnswers } from "@/lib/quiz";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function ProfileSetupPage() {
   const [bio, setBio] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null]);
+  const [quizAnswers, setQuizAnswers] = useState<QuizAnswers>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +45,11 @@ export default function ProfileSetupPage() {
 
     if (photoCount !== 3) {
       setError("Please add all 3 photos.");
+      return;
+    }
+
+    if (!isQuizComplete(quizAnswers)) {
+      setError("Answer every quiz question so we can find your best matches.");
       return;
     }
 
@@ -57,7 +65,7 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    const { urls, error: uploadError } = await uploadPhotos(supabase, user.id, photos);
+    const { paths, error: uploadError } = await uploadPhotos(photos);
     if (uploadError) {
       setError(uploadError);
       setLoading(false);
@@ -73,7 +81,8 @@ export default function ProfileSetupPage() {
       phone_number: phoneNumber,
       bio,
       interests,
-      photo_urls: urls,
+      photo_urls: paths,
+        quiz_answers: sanitizeAnswers(quizAnswers),
       is_complete: true,
     });
 
@@ -84,7 +93,7 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    router.push(gender === "female" ? "/explore" : "/requests");
+    router.push("/explore");
     router.refresh();
   }
 
@@ -157,6 +166,13 @@ export default function ProfileSetupPage() {
             <Field label="Interests" htmlFor="interests" hint="Press Enter or comma after each one. Up to 8.">
               <InterestsInput value={interests} onChange={setInterests} />
             </Field>
+          </FormSection>
+
+          <FormSection
+            title="Freshers night quiz"
+            description={`This powers your match %. Be honest! (${quizProgress(quizAnswers)}/${QUIZ.length})`}
+          >
+            <QuizFields value={quizAnswers} onChange={setQuizAnswers} />
           </FormSection>
 
           <FormSection title="Contact">

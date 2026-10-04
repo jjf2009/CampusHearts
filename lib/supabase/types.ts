@@ -1,5 +1,10 @@
 export type Gender = "male" | "female";
 export type RequestStatus = "pending" | "accepted" | "declined";
+export type VerificationStatus = "verified" | "rejected";
+export type VerificationMethod = "college_email" | "admission_pdf";
+
+/** Quiz answers keyed by question id (see lib/quiz.ts). */
+export type QuizAnswers = Record<string, string | number | boolean>;
 
 export interface Profile {
   user_id: string;
@@ -10,7 +15,9 @@ export interface Profile {
   phone_number: string;
   bio: string;
   interests: string[];
+  /** Storage paths in the private profile-photos bucket, served via /api/photos. */
   photo_urls: string[];
+  quiz_answers: QuizAnswers;
   is_complete: boolean;
   created_at: string;
   updated_at: string;
@@ -27,6 +34,19 @@ export interface LoveRequest {
   responded_at: string | null;
 }
 
+export interface Verification {
+  user_id: string;
+  status: VerificationStatus;
+  method: VerificationMethod;
+  admission_number: string | null;
+  pdf_path: string | null;
+  pdf_sha256: string | null;
+  attempts: number;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -40,6 +60,11 @@ export interface Database {
         Insert: Pick<LoveRequest, "sender_id" | "receiver_id">;
         Update: Partial<Pick<LoveRequest, "status" | "responded_at">>;
       };
+      verifications: {
+        Row: Verification;
+        Insert: Partial<Verification> & Pick<Verification, "user_id" | "status" | "method">;
+        Update: Partial<Verification>;
+      };
     };
     Views: {
       profiles_public: {
@@ -50,6 +75,14 @@ export interface Database {
       current_user_gender: {
         Args: Record<string, never>;
         Returns: Gender;
+      };
+      is_verified: {
+        Args: { uid: string };
+        Returns: boolean;
+      };
+      can_like: {
+        Args: { target: string };
+        Returns: boolean;
       };
       get_match_phone_number: {
         Args: { other_user_id: string };

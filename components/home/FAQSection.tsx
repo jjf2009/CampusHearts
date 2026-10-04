@@ -8,13 +8,13 @@ const faqs = [
     key: "1",
     question: "Who can join?",
     answer:
-      "Any student at a college in Goa with a valid college email address. You sign in with a one-time code sent to that email, so every account belongs to a real student.",
+      "Any student at our college. Seniors sign in with their college email. Freshers without an ID card or college email sign in with any email and upload the admission letter PDF they received. We check the college name, intake year, your name and admission number automatically, and one letter can only be used for one account.",
   },
   {
     key: "2",
-    question: "Why can only women send love requests?",
+    question: "Can people screenshot my photos?",
     answer:
-      "It keeps things calm and respectful. Women decide who they want to hear from, and men never get to message anyone who hasn't shown interest first.",
+      "We make it as hard as a website can. Photos are stored encrypted, are never sent as a normal image, only appear while someone presses and holds, vanish the moment they switch apps, and are stamped with the viewer's name. No website can fully block a phone's screenshot button, but any leak can be traced back to whoever took it.",
   },
   {
     key: "3",
@@ -26,7 +26,7 @@ const faqs = [
     key: "4",
     question: "What happens if I decline a request?",
     answer:
-      "Nothing awkward. The request just disappears. The sender isn't told why, and they can't send you another one.",
+      "Nothing awkward. The request just disappears. The sender isn't told why, and they can't send you another one. If you like someone who already liked you, it's an instant match.",
   },
   {
     key: "5",

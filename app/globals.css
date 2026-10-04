@@ -237,3 +237,18 @@
     scroll-behavior: auto;
   }
 }
+
+/* Profile photos: no selecting, dragging, long-press saving or printing. */
+.protected-photo {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  touch-action: pan-y;
+}
+
+@media print {
+  .protected-photo {
+    visibility: hidden !important;
+  }
+}

@@ -16,6 +16,8 @@ import {
   type PhotoSlot,
 } from "@/components/profile/ProfileFields";
 import { LockIcon } from "@/components/ui/icons";
+import QuizFields, { quizProgress } from "@/components/profile/QuizFields";
+import { QUIZ, isQuizComplete, sanitizeAnswers } from "@/lib/quiz";
 
 export default function ProfileEditForm({ profile }: { profile: Profile }) {
   const router = useRouter();
@@ -30,6 +32,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
   const [photos, setPhotos] = useState<PhotoSlot[]>(
     [0, 1, 2].map((i) => profile.photo_urls[i] ?? null)
   );
+  const [quizAnswers, setQuizAnswers] = useState(profile.quiz_answers ?? {});
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,9 +47,14 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
       return;
     }
 
+    if (!isQuizComplete(quizAnswers)) {
+      setError("Answer every quiz question so we can find your best matches.");
+      return;
+    }
+
     setLoading(true);
 
-    const { urls, error: uploadError } = await uploadPhotos(supabase, profile.user_id, photos);
+    const { paths, error: uploadError } = await uploadPhotos(photos);
     if (uploadError) {
       setError(uploadError);
       setLoading(false);
@@ -62,7 +70,8 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
         phone_number: phoneNumber,
         bio,
         interests,
-        photo_urls: urls,
+        photo_urls: paths,
+        quiz_answers: sanitizeAnswers(quizAnswers),
       })
       .eq("user_id", profile.user_id);
 
@@ -73,7 +82,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
       return;
     }
 
-    setPhotos(urls);
+    setPhotos(paths);
     setSaved(true);
     router.refresh();
     setTimeout(() => setSaved(false), 2500);
@@ -81,7 +90,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <FormSection title="Photos" description="Tap a photo to replace it. The first one is your main photo.">
+      <FormSection title="Photos" description="Hold a photo to view it, tap Replace to change it. The first one is your main photo.">
         <PhotoPicker value={photos} onChange={setPhotos} />
       </FormSection>
 
@@ -126,6 +135,13 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
         <Field label="Interests" htmlFor="interests" hint="Press Enter or comma after each one. Up to 8.">
           <InterestsInput value={interests} onChange={setInterests} />
         </Field>
+      </FormSection>
+
+      <FormSection
+        title="Freshers night quiz"
+        description={`Your answers decide your match %. (${quizProgress(quizAnswers)}/${QUIZ.length})`}
+      >
+        <QuizFields value={quizAnswers} onChange={setQuizAnswers} />
       </FormSection>
 
       <FormSection title="Contact">

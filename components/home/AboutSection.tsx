@@ -6,21 +6,21 @@ import { HeartIcon, LockIcon, ShieldIcon } from "@/components/ui/icons";
 const values = [
   {
     icon: HeartIcon,
-    title: "She makes the first move",
+    title: "Matched by a quiz, not just looks",
     description:
-      "Only women can send love requests. No flood of unwanted messages, no pressure. Just people who are actually interested.",
+      "Answer a 10-question freshers night quiz. Your deck is sorted by compatibility, with a match % on every profile.",
   },
   {
     icon: ShieldIcon,
     title: "Students only",
     description:
-      "Every account is tied to a verified college email. The people you see go to college in Goa, just like you.",
+      "Seniors verify with their college email. Freshers verify instantly with their admission letter PDF. No ID card needed.",
   },
   {
     icon: LockIcon,
-    title: "Your number stays private",
+    title: "Photos locked, numbers private",
     description:
-      "Your WhatsApp number is hidden from everyone. It only unlocks for someone after you've both said yes.",
+      "Photos are stored encrypted, appear only while someone holds them, and carry the viewer's name as a watermark. Numbers unlock only after you both say yes.",
   },
 ];
 

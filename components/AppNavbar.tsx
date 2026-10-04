@@ -4,19 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Gender } from "@/lib/supabase/types";
 import { CompassIcon, InboxIcon, LogoutIcon, SparkIcon, UserIcon } from "@/components/ui/icons";
 
-export default function AppNavbar({ gender }: { gender: Gender }) {
+export default function AppNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
 
-  // Women browse and send requests; men receive and answer them.
   const links = [
-    gender === "female"
-      ? { href: "/explore", label: "Explore", icon: CompassIcon }
-      : { href: "/requests", label: "Requests", icon: InboxIcon },
+    { href: "/explore", label: "Explore", icon: CompassIcon },
+    { href: "/requests", label: "Requests", icon: InboxIcon },
     { href: "/matches", label: "Matches", icon: SparkIcon },
     { href: "/profile", label: "Profile", icon: UserIcon },
   ];
@@ -89,7 +86,7 @@ export default function AppNavbar({ gender }: { gender: Gender }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-w-20 flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-xs font-medium transition ${
+                className={`flex min-w-16 flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-xs font-medium transition ${
                   active ? "text-rose-ink" : "text-faint"
                 }`}
               >

@@ -1,17 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AnimatePresence,
   motion,
+  useDragControls,
   useMotionValue,
   useTransform,
   type PanInfo,
 } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import type { PublicProfile } from "@/lib/supabase/types";
+import type { Compatibility } from "@/lib/matching";
 import EmptyState from "@/components/ui/EmptyState";
-import { CapIcon, CompassIcon, HeartIcon, MapPinIcon, XIcon } from "@/components/ui/icons";
+import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CapIcon,
+  CompassIcon,
+  HeartIcon,
+  MapPinIcon,
+  XIcon,
+} from "@/components/ui/icons";
+
+export type RankedProfile = PublicProfile & { compatibility: Compatibility };
 
 const SWIPE_THRESHOLD = 120;
 
@@ -19,37 +32,31 @@ function ProfileCard({
   profile,
   onSwipe,
 }: {
-  profile: PublicProfile;
+  profile: RankedProfile;
   onSwipe: (direction: "left" | "right") => void;
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
-  const photoRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
   const likeOpacity = useTransform(x, [30, SWIPE_THRESHOLD], [0, 1]);
   const passOpacity = useTransform(x, [-SWIPE_THRESHOLD, -30], [1, 0]);
 
   const photos = profile.photo_urls.slice(0, 3);
+  const { score, shared } = profile.compatibility;
 
   function handleDragEnd(_: unknown, info: PanInfo) {
     if (info.offset.x > SWIPE_THRESHOLD) onSwipe("right");
     else if (info.offset.x < -SWIPE_THRESHOLD) onSwipe("left");
   }
 
-  // Tap the left or right half of the photo to flip through photos.
-  function handlePhotoTap(_: unknown, info: { point: { x: number } }) {
-    const rect = photoRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const tappedRight = info.point.x - rect.left > rect.width / 2;
-    setPhotoIndex((i) =>
-      tappedRight ? Math.min(i + 1, photos.length - 1) : Math.max(i - 1, 0)
-    );
-  }
-
   return (
     <motion.article
       style={{ x, rotate }}
       drag="x"
+      // Holding the photo reveals it, so swiping starts from the details below.
+      dragListener={false}
+      dragControls={dragControls}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.9}
       onDragEnd={handleDragEnd}
@@ -65,56 +72,76 @@ function ProfileCard({
           transition: { duration: 0.35 },
         }),
       }}
-      className="surface relative cursor-grab [grid-area:1/1] touch-pan-y overflow-hidden rounded-[2rem] active:cursor-grabbing"
+      className="surface relative [grid-area:1/1] overflow-hidden rounded-[2rem]"
     >
-      <motion.div
-        ref={photoRef}
-        onTap={handlePhotoTap}
-        className="relative aspect-[4/5] w-full select-none bg-blush"
-      >
-        {photos.map((url, i) => (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            key={url}
-            src={url}
-            alt={i === photoIndex ? `${profile.name}, photo ${i + 1}` : ""}
-            draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
-              i === photoIndex ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ))}
+      <div className="relative aspect-[4/5] w-full bg-blush">
+        <ProtectedPhoto
+          path={photos[photoIndex]}
+          alt={`${profile.name}, photo ${photoIndex + 1}`}
+          className="absolute inset-0"
+        />
 
         {/* Photo progress bars */}
         {photos.length > 1 && (
-          <div className="absolute inset-x-3 top-3 flex gap-1.5">
-            {photos.map((url, i) => (
+          <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1.5">
+            {photos.map((path, i) => (
               <span
-                key={url}
+                key={path}
                 className={`h-1 flex-1 rounded-full ${i === photoIndex ? "bg-white" : "bg-white/40"}`}
               />
             ))}
           </div>
         )}
 
+        <span className="pointer-events-none absolute top-7 left-3 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-rose-ink shadow-sm">
+          {score}% match
+        </span>
+
+        {photos.length > 1 && (
+          <div className="absolute top-6 right-3 flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((i) => Math.max(i - 1, 0))}
+              disabled={photoIndex === 0}
+              aria-label="Previous photo"
+              className="rounded-full bg-white/80 p-1.5 text-charcoal shadow-sm disabled:opacity-40"
+            >
+              <ArrowLeftIcon width={16} height={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((i) => Math.min(i + 1, photos.length - 1))}
+              disabled={photoIndex === photos.length - 1}
+              aria-label="Next photo"
+              className="rounded-full bg-white/80 p-1.5 text-charcoal shadow-sm disabled:opacity-40"
+            >
+              <ArrowRightIcon width={16} height={16} />
+            </button>
+          </div>
+        )}
+
         {/* Swipe stamps */}
         <motion.span
           style={{ opacity: likeOpacity }}
-          className="absolute top-10 left-5 -rotate-12 rounded-xl border-4 border-emerald-400 px-3 py-1 text-2xl font-bold tracking-wider text-emerald-400"
+          className="pointer-events-none absolute top-20 left-5 -rotate-12 rounded-xl border-4 border-emerald-400 px-3 py-1 text-2xl font-bold tracking-wider text-emerald-400"
         >
           LIKE
         </motion.span>
         <motion.span
           style={{ opacity: passOpacity }}
-          className="absolute top-10 right-5 rotate-12 rounded-xl border-4 border-white px-3 py-1 text-2xl font-bold tracking-wider text-white"
+          className="pointer-events-none absolute top-20 right-5 rotate-12 rounded-xl border-4 border-white px-3 py-1 text-2xl font-bold tracking-wider text-white"
         >
           PASS
         </motion.span>
+      </div>
 
-        {/* Name overlay */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent px-5 pt-20 pb-5 text-white">
-          <h2 className="font-serif text-3xl text-white">{profile.name}</h2>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/90">
+      <div
+        onPointerDown={(e) => dragControls.start(e)}
+        className="cursor-grab touch-pan-y space-y-4 p-5 select-none active:cursor-grabbing"
+      >
+        <div>
+          <h2 className="font-serif text-3xl text-charcoal">{profile.name}</h2>
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
             <span className="flex items-center gap-1.5">
               <CapIcon width={16} height={16} />
               Year {profile.year_of_study}
@@ -125,30 +152,36 @@ function ProfileCard({
             </span>
           </div>
         </div>
-      </motion.div>
 
-      {(profile.bio || profile.interests.length > 0) && (
-        <div className="space-y-4 p-5">
-          {profile.bio && <p className="leading-relaxed text-charcoal">{profile.bio}</p>}
-          {profile.interests.length > 0 && (
-            <ul className="flex flex-wrap gap-2">
-              {profile.interests.map((interest) => (
-                <li
-                  key={interest}
-                  className="rounded-full bg-peach/35 px-3 py-1 text-sm text-charcoal"
-                >
-                  {interest}
+        {shared.length > 0 && (
+          <div>
+            <p className="text-xs font-medium tracking-wide text-faint uppercase">You both</p>
+            <ul className="mt-1.5 flex flex-wrap gap-2">
+              {shared.slice(0, 3).map((label) => (
+                <li key={label} className="rounded-full bg-rose-soft/20 px-3 py-1 text-sm text-rose-ink">
+                  {label}
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {profile.bio && <p className="leading-relaxed text-charcoal">{profile.bio}</p>}
+        {profile.interests.length > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {profile.interests.map((interest) => (
+              <li key={interest} className="rounded-full bg-peach/35 px-3 py-1 text-sm text-charcoal">
+                {interest}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </motion.article>
   );
 }
 
-export default function ExploreDeck({ initialProfiles }: { initialProfiles: PublicProfile[] }) {
+export default function ExploreDeck({ initialProfiles }: { initialProfiles: RankedProfile[] }) {
   const supabase = createClient();
   const [profiles, setProfiles] = useState(initialProfiles);
   const [exitDirection, setExitDirection] = useState(1);
@@ -174,14 +207,15 @@ export default function ExploreDeck({ initialProfiles }: { initialProfiles: Publ
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("love_requests")
-        .insert({ sender_id: user.id, receiver_id: current.user_id });
+        .insert({ sender_id: user.id, receiver_id: current.user_id })
+        .select("status")
+        .single();
 
-      showToast(
-        error ? `Couldn't send: ${error.message}` : `Love request sent to ${current.name} 💌`,
-        error ? "error" : "ok"
-      );
+      if (error) showToast(`Couldn't send: ${error.message}`, "error");
+      else if (data?.status === "accepted") showToast(`It's a match with ${current.name}! 🎉`, "ok");
+      else showToast(`Love request sent to ${current.name} 💌`, "ok");
     },
     [current, supabase, showToast]
   );
@@ -253,7 +287,7 @@ export default function ExploreDeck({ initialProfiles }: { initialProfiles: Publ
             </button>
           </div>
           <p className="mt-4 text-center text-xs text-faint">
-            Swipe, tap the buttons, or use ← → keys · {profiles.length} left
+            Hold a photo to see it · drag the card, tap the buttons, or use ← → · {profiles.length} left
           </p>
         </>
       )}
