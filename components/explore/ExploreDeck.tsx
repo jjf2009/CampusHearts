@@ -9,9 +9,9 @@ import {
   useTransform,
   type PanInfo,
 } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 import type { PublicProfile } from "@/lib/supabase/types";
-import type { Compatibility } from "@/lib/matching";
+import type { Ranked } from "@/lib/matching";
+import { sendLike } from "@/components/explore/LikeButton";
 import EmptyState from "@/components/ui/EmptyState";
 import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
 import {
@@ -24,7 +24,7 @@ import {
   XIcon,
 } from "@/components/ui/icons";
 
-export type RankedProfile = PublicProfile & { compatibility: Compatibility };
+export type RankedProfile = Ranked<PublicProfile> & { likesYou: boolean };
 
 const SWIPE_THRESHOLD = 120;
 
@@ -95,6 +95,7 @@ function ProfileCard({
 
         <span className="pointer-events-none absolute top-7 left-3 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-rose-ink shadow-sm">
           {score}% match
+          {profile.likesYou && " · Likes you"}
         </span>
 
         {photos.length > 1 && (
@@ -140,15 +141,18 @@ function ProfileCard({
         className="cursor-grab touch-pan-y space-y-4 p-5 select-none active:cursor-grabbing"
       >
         <div>
-          <h2 className="font-serif text-3xl text-charcoal">{profile.name}</h2>
+          <h2 className="font-serif text-3xl text-charcoal">
+            {profile.name}
+            {profile.age ? <span className="text-muted">, {profile.age}</span> : null}
+          </h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
             <span className="flex items-center gap-1.5">
               <CapIcon width={16} height={16} />
-              Year {profile.year_of_study}
+              {[profile.branch, `Year ${profile.year_of_study}`].filter(Boolean).join(" · ")}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPinIcon width={16} height={16} />
-              {profile.location}
+              From {profile.location}
             </span>
           </div>
         </div>
@@ -181,13 +185,21 @@ function ProfileCard({
   );
 }
 
-export default function ExploreDeck({ initialProfiles }: { initialProfiles: RankedProfile[] }) {
-  const supabase = createClient();
+export default function ExploreDeck({
+  initialProfiles,
+  hasPreferences,
+}: {
+  initialProfiles: RankedProfile[];
+  hasPreferences: boolean;
+}) {
   const [profiles, setProfiles] = useState(initialProfiles);
+  // Shown once, when the deck runs out of people who fit your quiz preferences.
+  const [dividerSeen, setDividerSeen] = useState(false);
   const [exitDirection, setExitDirection] = useState(1);
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
 
   const current = profiles[0];
+  const showDivider = hasPreferences && !dividerSeen && !!current && !current.fitsPrefs;
 
   const showToast = useCallback((text: string, tone: "ok" | "error") => {
     setToast({ text, tone });
@@ -196,28 +208,18 @@ export default function ExploreDeck({ initialProfiles }: { initialProfiles: Rank
 
   const decide = useCallback(
     async (direction: "left" | "right") => {
-      if (!current) return;
+      if (!current || showDivider) return;
       setExitDirection(direction === "right" ? 1 : -1);
       setProfiles((prev) => prev.slice(1));
 
       if (direction === "left") return;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("love_requests")
-        .insert({ sender_id: user.id, receiver_id: current.user_id })
-        .select("status")
-        .single();
-
-      if (error) showToast(`Couldn't send: ${error.message}`, "error");
-      else if (data?.status === "accepted") showToast(`It's a match with ${current.name}! 🎉`, "ok");
+      const { state, error } = await sendLike(current.user_id);
+      if (error) showToast(`Couldn't send: ${error}`, "error");
+      else if (state === "matched") showToast(`It's a match with ${current.name}! 🎉`, "ok");
       else showToast(`Love request sent to ${current.name} 💌`, "ok");
     },
-    [current, supabase, showToast]
+    [current, showDivider, showToast]
   );
 
   useEffect(() => {
@@ -255,6 +257,28 @@ export default function ExploreDeck({ initialProfiles }: { initialProfiles: Rank
           description="You've seen everyone for now. New students join all the time, so check back soon."
           action={{ href: "/matches", label: "See your matches" }}
         />
+      ) : showDivider ? (
+        <div className="surface rounded-[2rem] p-8 text-center">
+          <p className="text-4xl" aria-hidden="true">
+            ✨
+          </p>
+          <h2 className="mt-3 font-serif text-2xl text-charcoal">
+            {profiles.length === initialProfiles.length
+              ? "Nobody fits all your preferences yet"
+              : "That's everyone who fits your preferences"}
+          </h2>
+          <p className="mt-2 text-muted">
+            Here are {profiles.length} more {profiles.length === 1 ? "person" : "people"} you might like,
+            best match first.
+          </p>
+          <button
+            type="button"
+            onClick={() => setDividerSeen(true)}
+            className="btn-primary mt-6 rounded-full px-6 py-3 font-medium text-white"
+          >
+            Keep going
+          </button>
+        </div>
       ) : (
         <>
           <div className="relative grid">

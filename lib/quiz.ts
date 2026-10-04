@@ -1,4 +1,15 @@
 import type { QuizAnswers } from "@/lib/supabase/types";
+import {
+  AGE_MAX,
+  AGE_MIN,
+  BRANCHES,
+  HEIGHT_MAX,
+  HEIGHT_MIN,
+  LANGUAGES,
+  PREFER_NOT_TO_SAY,
+  RELIGIONS,
+  YEARS,
+} from "@/lib/profileOptions";
 
 interface BaseQuestion {
   id: string;
@@ -145,12 +156,72 @@ export function isQuizComplete(answers: QuizAnswers | null | undefined): boolean
   return !!answers && QUIZ.every((q) => isAnswered(q, answers[q.id]));
 }
 
-/** Keeps only known question ids with valid values. */
+/**
+ * "Who would you like to go with?" Soft preferences: people who fit come
+ * first, everyone else is still shown after them. Empty / missing = any.
+ */
+export interface Preferences {
+  pref_years: number[];
+  pref_branches: string[];
+  pref_religions: string[];
+  pref_languages: string[];
+  pref_age_min?: number;
+  pref_age_max?: number;
+  pref_height_min?: number;
+  pref_height_max?: number;
+}
+
+const PREF_LISTS = {
+  pref_years: YEARS as readonly (string | number)[],
+  pref_branches: BRANCHES as readonly (string | number)[],
+  pref_religions: RELIGIONS.filter((r) => r !== PREFER_NOT_TO_SAY) as readonly (string | number)[],
+  pref_languages: LANGUAGES as readonly (string | number)[],
+};
+
+const PREF_RANGES = {
+  pref_age_min: [AGE_MIN, AGE_MAX],
+  pref_age_max: [AGE_MIN, AGE_MAX],
+  pref_height_min: [HEIGHT_MIN, HEIGHT_MAX],
+  pref_height_max: [HEIGHT_MIN, HEIGHT_MAX],
+} as const;
+
+export function getPreferences(answers: QuizAnswers | null | undefined): Preferences {
+  const a = answers ?? {};
+  const list = <T,>(key: keyof typeof PREF_LISTS) =>
+    (Array.isArray(a[key]) ? (a[key] as T[]) : []);
+  const num = (key: keyof typeof PREF_RANGES) =>
+    typeof a[key] === "number" ? (a[key] as number) : undefined;
+  return {
+    pref_years: list<number>("pref_years"),
+    pref_branches: list<string>("pref_branches"),
+    pref_religions: list<string>("pref_religions"),
+    pref_languages: list<string>("pref_languages"),
+    pref_age_min: num("pref_age_min"),
+    pref_age_max: num("pref_age_max"),
+    pref_height_min: num("pref_height_min"),
+    pref_height_max: num("pref_height_max"),
+  };
+}
+
+/** Keeps only known question ids and preferences with valid values. */
 export function sanitizeAnswers(answers: QuizAnswers): QuizAnswers {
   const clean: QuizAnswers = {};
   for (const q of QUIZ) {
     if (isAnswered(q, answers[q.id])) clean[q.id] = answers[q.id];
   }
   if (answers[LOOKING_FOR_STRICT] === true) clean[LOOKING_FOR_STRICT] = true;
+
+  for (const [key, allowed] of Object.entries(PREF_LISTS)) {
+    const value = answers[key];
+    if (!Array.isArray(value)) continue;
+    const kept = [...new Set(value as (string | number)[])].filter((v) => allowed.includes(v));
+    if (kept.length) clean[key] = kept as string[] | number[];
+  }
+  for (const [key, [min, max]] of Object.entries(PREF_RANGES)) {
+    const value = answers[key];
+    if (typeof value === "number" && Number.isInteger(value) && value >= min && value <= max) {
+      clean[key] = value;
+    }
+  }
   return clean;
 }

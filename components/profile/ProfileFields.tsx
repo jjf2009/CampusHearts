@@ -2,6 +2,16 @@
 
 import { useState, type ReactNode } from "react";
 import type { Gender } from "@/lib/supabase/types";
+import {
+  AGE_MAX,
+  AGE_MIN,
+  BRANCHES,
+  HEIGHT_MAX,
+  HEIGHT_MIN,
+  LANGUAGES,
+  RELIGIONS,
+  YEARS,
+} from "@/lib/profileOptions";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 import ProtectedPhoto from "@/components/ui/ProtectedPhoto";
 
@@ -10,7 +20,6 @@ export type PhotoSlot = File | string | null;
 
 export const BIO_MAX = 300;
 const INTERESTS_MAX = 8;
-const YEARS = [1, 2, 3, 4, 5, 6];
 
 export function Field({
   label,
@@ -109,6 +118,112 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
         );
       })}
     </div>
+  );
+}
+
+/** Toggleable chips for picking any number of options. */
+export function ChipMultiSelect<T extends string | number>({
+  options,
+  value,
+  onChange,
+  label,
+  format = String,
+}: {
+  options: readonly T[];
+  value: T[];
+  onChange: (next: T[]) => void;
+  label: string;
+  format?: (option: T) => string;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const selected = value.includes(option);
+        return (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(selected ? value.filter((v) => v !== option) : [...value, option])}
+            className={`rounded-full border px-3.5 py-1.5 text-sm transition ${
+              selected
+                ? "border-transparent bg-rose-deep text-white"
+                : "border-rose-soft/30 bg-white text-charcoal hover:border-rose-deep"
+            }`}
+          >
+            {format(option)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A plain <select> styled like the other inputs. Empty string = nothing picked. */
+export function SelectInput({
+  id,
+  value,
+  onChange,
+  options,
+  placeholder,
+  required,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+  placeholder: string;
+  required?: boolean;
+}) {
+  return (
+    <select
+      id={id}
+      required={required}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="input-field appearance-none bg-white"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Number input that holds "" while empty, so optional fields can be cleared. */
+export function NumberInput({
+  id,
+  value,
+  onChange,
+  min,
+  max,
+  placeholder,
+  required,
+}: {
+  id: string;
+  value: number | "";
+  onChange: (value: number | "") => void;
+  min: number;
+  max: number;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <input
+      id={id}
+      type="number"
+      inputMode="numeric"
+      required={required}
+      min={min}
+      max={max}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
+      className="input-field"
+    />
   );
 }
 
@@ -301,4 +416,98 @@ export function FormMessage({ error, success }: { error?: string | null; success
     );
   }
   return null;
+}
+
+export interface ProfileDetails {
+  age: number | "";
+  branch: string;
+  religion: string;
+  heightCm: number | "";
+  languages: string[];
+}
+
+export function detailsFromProfile(p: {
+  age: number | null;
+  branch: string | null;
+  religion: string | null;
+  height_cm: number | null;
+  languages: string[] | null;
+}): ProfileDetails {
+  return {
+    age: p.age ?? "",
+    branch: p.branch ?? "",
+    religion: p.religion ?? "",
+    heightCm: p.height_cm ?? "",
+    languages: p.languages ?? [],
+  };
+}
+
+/** Columns to save. Optional fields that are left blank become null. */
+export function detailsToColumns(d: ProfileDetails) {
+  return {
+    age: d.age === "" ? null : d.age,
+    branch: d.branch || null,
+    religion: d.religion || null,
+    height_cm: d.heightCm === "" ? null : d.heightCm,
+    languages: d.languages,
+  };
+}
+
+/** Age, branch, religion, height and languages: what people filter by. */
+export function ProfileDetailsFields({
+  value,
+  onChange,
+}: {
+  value: ProfileDetails;
+  onChange: (next: ProfileDetails) => void;
+}) {
+  const set = <K extends keyof ProfileDetails>(key: K, v: ProfileDetails[K]) =>
+    onChange({ ...value, [key]: v });
+
+  return (
+    <>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Age" htmlFor="age">
+          <NumberInput id="age" required min={AGE_MIN} max={AGE_MAX} value={value.age} onChange={(v) => set("age", v)} />
+        </Field>
+        <Field label="Branch" htmlFor="branch">
+          <SelectInput
+            id="branch"
+            required
+            value={value.branch}
+            onChange={(v) => set("branch", v)}
+            options={BRANCHES}
+            placeholder="Choose your branch"
+          />
+        </Field>
+        <Field label="Religion (optional)" htmlFor="religion" hint="Only used for search filters.">
+          <SelectInput
+            id="religion"
+            value={value.religion}
+            onChange={(v) => set("religion", v)}
+            options={RELIGIONS}
+            placeholder="Skip"
+          />
+        </Field>
+        <Field label="Height in cm (optional)" htmlFor="height">
+          <NumberInput
+            id="height"
+            min={HEIGHT_MIN}
+            max={HEIGHT_MAX}
+            value={value.heightCm}
+            placeholder="e.g. 168"
+            onChange={(v) => set("heightCm", v)}
+          />
+        </Field>
+      </div>
+      <Field label="Languages you speak">
+        <ChipMultiSelect
+          label="Languages you speak"
+          options={LANGUAGES}
+          value={value.languages}
+          onChange={(v) => set("languages", v)}
+        />
+      </Field>
+    </>
+  );
 }

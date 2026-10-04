@@ -1,10 +1,15 @@
-import { LOOKING_FOR_STRICT, QUIZ, SCALE_MAX, SCALE_MIN } from "@/lib/quiz";
+import { LOOKING_FOR_STRICT, QUIZ, SCALE_MAX, SCALE_MIN, getPreferences } from "@/lib/quiz";
 import type { QuizAnswers } from "@/lib/supabase/types";
 
 export interface MatchInput {
   quiz_answers: QuizAnswers | null;
   interests: string[];
   year_of_study: number;
+  age?: number | null;
+  branch?: string | null;
+  religion?: string | null;
+  height_cm?: number | null;
+  languages?: string[];
 }
 
 export interface Compatibility {
@@ -84,15 +89,44 @@ export function compatibility(a: MatchInput, b: MatchInput): Compatibility | nul
   };
 }
 
-/** Scores and sorts candidates for `me`, dropping dealbreaker mismatches. */
-export function rankCandidates<T extends MatchInput>(
-  me: MatchInput,
-  candidates: T[]
-): (T & { compatibility: Compatibility })[] {
+/**
+ * Whether `candidate` fits every preference `me` set. A preference left
+ * empty means "any"; a candidate who left that field blank doesn't fit it.
+ */
+export function fitsPreferences(me: MatchInput, candidate: MatchInput): boolean {
+  const p = getPreferences(me.quiz_answers);
+  const inRange = (value: number | null | undefined, min?: number, max?: number) => {
+    if (min === undefined && max === undefined) return true;
+    if (value == null) return false;
+    return (min === undefined || value >= min) && (max === undefined || value <= max);
+  };
+
+  if (p.pref_years.length && !p.pref_years.includes(candidate.year_of_study)) return false;
+  if (p.pref_branches.length && !p.pref_branches.includes(candidate.branch ?? "")) return false;
+  if (p.pref_religions.length && !p.pref_religions.includes(candidate.religion ?? "")) return false;
+  if (p.pref_languages.length && !p.pref_languages.some((l) => candidate.languages?.includes(l))) {
+    return false;
+  }
+  if (!inRange(candidate.age, p.pref_age_min, p.pref_age_max)) return false;
+  if (!inRange(candidate.height_cm, p.pref_height_min, p.pref_height_max)) return false;
+  return true;
+}
+
+export type Ranked<T> = T & { compatibility: Compatibility; fitsPrefs: boolean };
+
+/**
+ * Scores candidates for `me`, dropping dealbreaker mismatches. People who fit
+ * your preferences come first (best match first), then everyone else, so
+ * nobody ever runs out of people to see.
+ */
+export function rankCandidates<T extends MatchInput>(me: MatchInput, candidates: T[]): Ranked<T>[] {
   return candidates
     .flatMap((c) => {
       const result = compatibility(me, c);
-      return result ? [{ ...c, compatibility: result }] : [];
+      return result ? [{ ...c, compatibility: result, fitsPrefs: fitsPreferences(me, c) }] : [];
     })
-    .sort((x, y) => y.compatibility.score - x.compatibility.score);
+    .sort(
+      (x, y) =>
+        Number(y.fitsPrefs) - Number(x.fitsPrefs) || y.compatibility.score - x.compatibility.score
+    );
 }

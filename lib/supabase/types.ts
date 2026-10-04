@@ -3,8 +3,8 @@ export type RequestStatus = "pending" | "accepted" | "declined";
 export type VerificationStatus = "verified" | "rejected";
 export type VerificationMethod = "college_email" | "admission_pdf";
 
-/** Quiz answers keyed by question id (see lib/quiz.ts). */
-export type QuizAnswers = Record<string, string | number | boolean>;
+/** Quiz answers and partner preferences keyed by id (see lib/quiz.ts). */
+export type QuizAnswers = Record<string, string | number | boolean | string[] | number[]>;
 
 export interface Profile {
   user_id: string;
@@ -18,6 +18,11 @@ export interface Profile {
   /** Storage paths in the private profile-photos bucket, served via /api/photos. */
   photo_urls: string[];
   quiz_answers: QuizAnswers;
+  age: number | null;
+  branch: string | null;
+  religion: string | null;
+  height_cm: number | null;
+  languages: string[];
   is_complete: boolean;
   created_at: string;
   updated_at: string;

@@ -12,7 +12,7 @@ export default function AppNavbar() {
   const supabase = createClient();
 
   const links = [
-    { href: "/explore", label: "Explore", icon: CompassIcon },
+    { href: "/explore", label: "Browse", icon: CompassIcon },
     { href: "/requests", label: "Requests", icon: InboxIcon },
     { href: "/matches", label: "Matches", icon: SparkIcon },
     { href: "/profile", label: "Profile", icon: UserIcon },

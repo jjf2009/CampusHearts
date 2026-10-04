@@ -12,6 +12,9 @@ import {
   FormSection,
   InterestsInput,
   PhotoPicker,
+  detailsFromProfile,
+  ProfileDetailsFields,
+  detailsToColumns,
   YearPicker,
   type PhotoSlot,
 } from "@/components/profile/ProfileFields";
@@ -32,6 +35,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
   const [photos, setPhotos] = useState<PhotoSlot[]>(
     [0, 1, 2].map((i) => profile.photo_urls[i] ?? null)
   );
+  const [details, setDetails] = useState(() => detailsFromProfile(profile));
   const [quizAnswers, setQuizAnswers] = useState(profile.quiz_answers ?? {});
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -72,6 +76,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
         interests,
         photo_urls: paths,
         quiz_answers: sanitizeAnswers(quizAnswers),
+        ...detailsToColumns(details),
       })
       .eq("user_id", profile.user_id);
 
@@ -92,6 +97,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <FormSection title="Photos" description="Hold a photo to view it, tap Replace to change it. The first one is your main photo.">
         <PhotoPicker value={photos} onChange={setPhotos} />
+        <ProfileDetailsFields value={details} onChange={setDetails} />
       </FormSection>
 
       <FormSection title="Basics">
@@ -109,7 +115,7 @@ export default function ProfileEditForm({ profile }: { profile: Profile }) {
           <YearPicker value={yearOfStudy} onChange={setYearOfStudy} />
         </Field>
 
-        <Field label="Where you're based" htmlFor="location">
+        <Field label="From (hometown)" htmlFor="location">
           <input
             id="location"
             required

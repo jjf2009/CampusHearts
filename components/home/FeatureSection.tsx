@@ -12,12 +12,12 @@ const steps = [
   {
     icon: UserIcon,
     title: "Make your profile",
-    description: "Three photos, a short bio and the freshers night quiz. About three minutes.",
+    description: "Three photos, a few details and a quick quiz about you and who you'd like to meet.",
   },
   {
     icon: HeartIcon,
-    title: "Like your best matches",
-    description: "Your most compatible people show up first. If they like you back, it's an instant match.",
+    title: "Browse, filter or swipe",
+    description: "Search and filter by branch, year, age, hometown, religion and more, or just swipe. If they like you back, it's an instant match.",
   },
   {
     icon: WhatsAppIcon,

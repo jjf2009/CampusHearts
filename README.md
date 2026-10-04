@@ -26,7 +26,11 @@
    - Seniors with a college email are verified automatically.
    - Freshers, who have no ID card or activated college email yet, upload the **admission letter PDF**. The server reads the PDF and checks the college name, intake year, the student's name and admission number. One letter can only be linked to one account.
 3. **Build a profile**: 3 photos, a bio, interests, and a 10-question **freshers night quiz**.
-4. **Explore**: everyone sees verified profiles of the opposite gender, sorted by **compatibility %**. Like someone. If they like you back, it's an **instant match**. Otherwise they get a love request they can accept or decline.
+4. **Browse or swipe**: see verified profiles of the opposite gender as a searchable grid or as a swipe deck.
+   - **Search** by name, hometown or bio. **Sort** by best match, newest or age.
+   - **Filter** by branch, year, age, hometown ("from"), religion, height, languages and what they're looking for.
+   - The quiz also asks **who you'd like to meet** (year, branch, age, height, religion, languages). People who fit come first; if nobody fits, everyone else is still shown after them.
+   - Like someone. If they like you back, it's an **instant match**. Otherwise they get a love request they can accept or decline.
 5. On a match, both sides can unlock each other's WhatsApp number.
 
 ---
@@ -115,6 +119,7 @@ Before you begin, ensure you have the following installed:
    Create a project at [supabase.com](https://supabase.com), then run these in the Supabase SQL editor, in order (or use `supabase db push`):
    - [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). Before running it, edit `is_college_email` to check your college's real email domain.
    - [`supabase/migrations/0002_freshers.sql`](./supabase/migrations/0002_freshers.sql): admission-letter verification, both-ways browsing, mutual matches, and private photo storage.
+   - [`supabase/migrations/0003_browse_fields.sql`](./supabase/migrations/0003_browse_fields.sql): age, branch, religion, height and languages for search and filters. Edit the option lists in `lib/profileOptions.ts` to fit your college.
 
    > Photos uploaded before `0002` were stored unencrypted in a public bucket. Ask those users to re-upload their photos from the Profile page.
 

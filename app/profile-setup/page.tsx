@@ -14,8 +14,11 @@ import {
   GenderToggle,
   InterestsInput,
   PhotoPicker,
+  ProfileDetailsFields,
+  detailsToColumns,
   YearPicker,
   type PhotoSlot,
+  type ProfileDetails,
 } from "@/components/profile/ProfileFields";
 import { LockIcon } from "@/components/ui/icons";
 import QuizFields, { quizProgress } from "@/components/profile/QuizFields";
@@ -33,6 +36,13 @@ export default function ProfileSetupPage() {
   const [bio, setBio] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null]);
+  const [details, setDetails] = useState<ProfileDetails>({
+    age: "",
+    branch: "",
+    religion: "",
+    heightCm: "",
+    languages: [],
+  });
   const [quizAnswers, setQuizAnswers] = useState<QuizAnswers>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,6 +93,7 @@ export default function ProfileSetupPage() {
       interests,
       photo_urls: paths,
         quiz_answers: sanitizeAnswers(quizAnswers),
+        ...detailsToColumns(details),
       is_complete: true,
     });
 
@@ -130,7 +141,7 @@ export default function ProfileSetupPage() {
               <YearPicker value={yearOfStudy} onChange={setYearOfStudy} />
             </Field>
 
-            <Field label="Where you're based" htmlFor="location">
+            <Field label="From (hometown)" htmlFor="location">
               <input
                 id="location"
                 required
@@ -140,6 +151,7 @@ export default function ProfileSetupPage() {
                 className="input-field"
               />
             </Field>
+            <ProfileDetailsFields value={details} onChange={setDetails} />
           </FormSection>
 
           <FormSection title="Your photos" description={`Add 3 photos. The first one is your main photo. (${photoCount}/3)`}>
