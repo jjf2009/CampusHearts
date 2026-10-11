@@ -1,239 +1,357 @@
 @import "tailwindcss";
-@plugin '../hero.ts';
-/* Note: You may need to change the path to fit your project structure */
-@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------
+   Campus Buddy: hand-drawn, mobile-first.
+   Paper, ink and marker colours. Wobbly borders + hard offset shadows.
+   Existing utility names (bg-cream, text-charcoal, rose-*) map onto the
+   new palette so every screen picks up the style.
+   ------------------------------------------------------------------ */
 
 :root {
-  /* Primary Colors */
-  --color-rose-soft: #e8a4a4;
-  --color-rose-deep: #c77d7d;
-  --color-rose-ink: #a4585a;
-  --color-coral: #d4a89a;
-  --color-peach: #f5c7b8;
-  --color-lavender: #c4b5d0;
+  --paper: #fdfbf4;
+  --paper-2: #f5efe0;
+  --ink: #23201b;
+  --ink-soft: #57524a;
+  --ink-faint: #857f73;
+  --dots: #ddd5c2;
 
-  /* Backgrounds */
-  --color-bg-cream: #faf8f6;
-  --color-bg-blush: #fef7f4;
-  --color-bg-warm: #fff9f7;
+  --marker-pink: #d6336c; /* white text on it passes AA */
+  --marker-pink-soft: #ffc2d4;
+  --marker-pink-ink: #a61e4d;
+  --marker-yellow: #ffe066;
+  --marker-mint: #b2f2bb;
+  --marker-sky: #a5d8ff;
+  --marker-lilac: #d0bfff;
 
-  /* Text */
-  --color-text-primary: #2d2a2e;
-  --color-text-secondary: #6b6369;
-  --color-text-muted: #9a9197;
+  --wobble: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --wobble-2: 15px 255px 15px 225px / 225px 15px 255px 15px;
+  --wobble-sm: 18px 6px 16px 7px / 7px 16px 6px 18px;
+  --shadow-ink: 3px 4px 0 var(--ink);
+  --shadow-ink-sm: 2px 2px 0 var(--ink);
 
-  /* System */
-  --background: #faf8f6;
-  --foreground: #2d2a2e;
-
-  /* Shadows */
-  --shadow-soft: 0 4px 20px rgba(200, 125, 125, 0.08);
-  --shadow-card: 0 2px 12px rgba(200, 125, 125, 0.06);
-  --shadow-hover: 0 8px 30px rgba(200, 125, 125, 0.12);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --shadow-soft: var(--shadow-ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta), var(--font-geist-sans), system-ui, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, serif;
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--nf-hand), "Comic Sans MS", system-ui, sans-serif;
+  --font-serif: var(--nf-display), var(--nf-hand), cursive;
+  --font-hand: var(--nf-hand), system-ui, sans-serif;
+  --font-display: var(--nf-display), cursive;
 
-  /* Custom colors for Tailwind */
-  --color-rose-soft: #e8a4a4;
-  --color-rose-deep: #c77d7d;
-  /* Darker rose for text on light backgrounds (passes WCAG AA) */
-  --color-rose-ink: #a4585a;
-  --color-coral: #d4a89a;
-  --color-peach: #f5c7b8;
-  --color-lavender: #c4b5d0;
-  --color-cream: #faf8f6;
-  --color-blush: #fef7f4;
-  --color-warm: #fff9f7;
-  --color-charcoal: #2d2a2e;
-  --color-muted: #6b6369;
-  --color-faint: #9a9197;
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-marker-pink: var(--marker-pink);
+  --color-marker-yellow: var(--marker-yellow);
+  --color-marker-mint: var(--marker-mint);
+  --color-marker-sky: var(--marker-sky);
+  --color-marker-lilac: var(--marker-lilac);
+
+  /* Legacy names used across components, remapped to the new palette. */
+  --color-rose-soft: var(--marker-pink-soft);
+  --color-rose-deep: var(--marker-pink);
+  --color-rose-ink: var(--marker-pink-ink);
+  --color-coral: var(--marker-yellow);
+  --color-peach: var(--marker-yellow);
+  --color-lavender: var(--marker-sky);
+  --color-cream: var(--paper);
+  --color-blush: var(--paper-2);
+  --color-warm: var(--paper);
+  --color-charcoal: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-faint: var(--ink-faint);
 }
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-jakarta), system-ui, sans-serif;
-    line-height: 1.7;
-    letter-spacing: -0.01em;
+    min-height: 100dvh;
+    background-color: var(--paper);
+    background-image: radial-gradient(var(--dots) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: var(--nf-hand), "Comic Sans MS", system-ui, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    overflow-x: hidden;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-playfair), Georgia, serif;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    color: var(--color-text-primary);
+    font-family: var(--nf-display), cursive;
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--ink);
   }
 
   ::selection {
-    background-color: var(--color-rose-soft);
-    color: var(--color-text-primary);
+    background-color: var(--marker-yellow);
+    color: var(--ink);
   }
 
   *:focus-visible {
-    outline: 2px solid var(--color-rose-deep);
-    outline-offset: 2px;
+    outline: 3px dashed var(--marker-pink);
+    outline-offset: 3px;
+  }
+
+  /* Comfortable tap targets everywhere. */
+  button,
+  [role="button"],
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    touch-action: manipulation;
   }
 }
 
 @layer components {
-  /* Gradient backgrounds */
   .bg-gradient-warm {
-    background: linear-gradient(135deg, var(--color-bg-blush) 0%, var(--color-bg-cream) 100%);
+    background: transparent;
   }
 
-  .bg-gradient-rose {
-    background: linear-gradient(135deg, var(--color-rose-soft) 0%, var(--color-coral) 100%);
+  /* Sketchy card */
+  .surface,
+  .card-soft,
+  .sketch {
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: var(--wobble);
+    box-shadow: var(--shadow-ink);
   }
 
-  /* Static card surface */
-  .surface {
-    background: white;
-    border: 1px solid rgba(200, 125, 125, 0.12);
-    box-shadow: var(--shadow-card);
+  .sketch-alt {
+    border-radius: var(--wobble-2);
   }
 
-  /* Card that lifts on hover */
   .card-soft {
-    background: white;
-    border: 1px solid rgba(200, 125, 125, 0.1);
-    box-shadow: var(--shadow-card);
-    transition: all 0.3s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
 
   .card-soft:hover {
-    box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
+    transform: translate(-1px, -1px) rotate(-0.3deg);
+    box-shadow: 5px 6px 0 var(--ink);
   }
 
   /* Buttons */
-  .btn-primary {
-    background: linear-gradient(135deg, var(--color-rose-soft) 0%, var(--color-rose-deep) 100%);
-    transition: all 0.3s ease;
+  .btn-primary,
+  .btn-ghost,
+  .btn-ink {
+    border: 2px solid var(--ink);
+    box-shadow: var(--shadow-ink-sm);
+    font-weight: 700;
+    min-height: 44px;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
   }
 
-  .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 8px 25px rgba(200, 125, 125, 0.25);
-    transform: translateY(-1px);
+  .btn-primary {
+    background: var(--marker-pink);
+    color: #fff;
   }
 
   .btn-ghost {
-    border: 1px solid rgba(200, 125, 125, 0.3);
-    background: white;
-    color: var(--color-text-primary);
-    transition: all 0.2s ease;
+    background: #fff;
+    color: var(--ink);
+  }
+
+  .btn-ink {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn-primary:hover:not(:disabled),
+  .btn-ghost:hover:not(:disabled),
+  .btn-ink:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--ink);
   }
 
   .btn-ghost:hover:not(:disabled) {
-    border-color: var(--color-rose-deep);
-    background: var(--color-bg-blush);
+    background: var(--marker-yellow);
   }
 
-  /* Form controls */
+  .btn-primary:active:not(:disabled),
+  .btn-ghost:active:not(:disabled),
+  .btn-ink:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  /* Forms */
   .field-label {
     display: block;
-    margin-bottom: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-text-primary);
+    margin-bottom: 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
   }
 
   .field-hint {
-    margin-top: 0.375rem;
-    font-size: 0.75rem;
-    line-height: 1.5;
-    color: var(--color-text-secondary);
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
   }
 
   .input-field {
     width: 100%;
-    border-radius: 0.875rem;
-    border: 1px solid rgba(200, 125, 125, 0.25);
-    background: white;
-    padding: 0.75rem 1rem;
-    color: var(--color-text-primary);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-height: 48px;
+    border: 2px solid var(--ink);
+    border-radius: var(--wobble-sm);
+    background: #fff;
+    padding: 0.6rem 0.9rem;
+    font-size: 1.1rem; /* >= 16px stops iOS zooming into inputs */
+    color: var(--ink);
+    outline: none;
+    transition: box-shadow 0.15s ease;
   }
 
   .input-field::placeholder {
-    color: var(--color-text-muted);
+    color: var(--ink-faint);
   }
 
   .input-field:focus {
-    outline: none;
-    border-color: var(--color-rose-deep);
-    box-shadow: 0 0 0 4px rgba(232, 164, 164, 0.2);
+    box-shadow: 3px 3px 0 var(--marker-pink);
   }
 
-  /* Section eyebrow label */
-  .eyebrow {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-rose-ink);
+  /* Small washi-tape label */
+  .eyebrow,
+  .tape {
+    display: inline-block;
+    padding: 0.1rem 0.75rem;
+    background: color-mix(in srgb, var(--marker-yellow) 85%, transparent);
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transform: rotate(-2deg);
+    clip-path: polygon(2% 0, 98% 6%, 100% 94%, 0 100%);
   }
 
-  /* Bottom nav leaves room for the iOS home indicator */
+  .tape-pink {
+    background: var(--marker-pink-soft);
+  }
+
+  .tape-mint {
+    background: var(--marker-mint);
+  }
+
+  .tape-sky {
+    background: var(--marker-sky);
+  }
+
+  /* Marker highlight behind a word */
+  .highlight {
+    background: linear-gradient(
+      104deg,
+      transparent 0.9%,
+      var(--marker-yellow) 2.4%,
+      color-mix(in srgb, var(--marker-yellow) 70%, transparent) 5.8%,
+      color-mix(in srgb, var(--marker-yellow) 60%, transparent) 93%,
+      transparent 96%
+    );
+    padding: 0 0.2em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .scribble-underline {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8 C 40 2, 80 12, 120 6 S 180 4, 198 7' fill='none' stroke='%23d6336c' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 100% 0.35em;
+    padding-bottom: 0.15em;
+  }
+
+  .tilt-l {
+    transform: rotate(-1.2deg);
+  }
+
+  .tilt-r {
+    transform: rotate(1.2deg);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: #fff;
+    padding: 0.15rem 0.7rem;
+    font-size: 0.95rem;
+  }
+
   .pb-safe {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
-/* Subtle animations */
-@keyframes float {
+@keyframes wiggle {
   0%,
   100% {
-    transform: translateY(0px);
+    transform: rotate(-3deg);
   }
-
   50% {
-    transform: translateY(-8px);
+    transform: rotate(3deg);
   }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.animate-wiggle {
+  animation: wiggle 2.4s ease-in-out infinite;
 }
 
-@keyframes fade-in-up {
+@keyframes pop-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: scale(0.92) rotate(-2deg);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) rotate(0);
   }
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
+.animate-pop-in {
+  animation: pop-in 0.25s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-float,
-  .animate-fade-in-up {
+  .animate-wiggle,
+  .animate-pop-in {
     animation: none;
   }
 
-  html {
-    scroll-behavior: auto;
+  .card-soft:hover,
+  .btn-primary:hover,
+  .btn-ghost:hover {
+    transform: none;
+  }
+}
+
+/* Profile photos: no selecting, dragging, long-press saving or printing. */
+.protected-photo {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  touch-action: pan-y;
+}
+
+@media print {
+  .protected-photo {
+    visibility: hidden !important;
   }
 }

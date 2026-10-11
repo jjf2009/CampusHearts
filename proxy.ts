@@ -1,12 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Auth pages: logged-out only. Logged-in users get sent to their home screen.
-const AUTH_PATHS = ["/login", "/signup"];
-
-function homeFor(gender: string | undefined) {
-  return gender === "male" ? "/requests" : "/explore";
-}
+import { redirectFor } from "@/lib/routing";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -35,42 +30,28 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isAuthPage = AUTH_PATHS.some((p) => path.startsWith(p));
-  const isLanding = path === "/";
+  // API routes do their own auth checks and must never get an HTML redirect.
+  if (path.startsWith("/api/")) return response;
 
-  if (!user && !isAuthPage && !isLanding) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
+  let status = null;
+  let profileComplete = false;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("gender, is_complete")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!profile?.is_complete) {
-      if (path !== "/profile-setup") {
-        return NextResponse.redirect(new URL("/profile-setup", request.url));
-      }
-      return response;
-    }
-
-    if (isAuthPage || isLanding) {
-      return NextResponse.redirect(new URL(homeFor(profile.gender), request.url));
-    }
-
-    if (path.startsWith("/explore") && profile.gender !== "female") {
-      return NextResponse.redirect(new URL("/requests", request.url));
-    }
-    if (path.startsWith("/requests") && profile.gender !== "male") {
-      return NextResponse.redirect(new URL("/explore", request.url));
-    }
+    const [{ data: verification }, { data: profile }] = await Promise.all([
+      supabase.from("verifications").select("status").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("is_complete").eq("user_id", user.id).maybeSingle(),
+    ]);
+    status = verification?.status ?? null;
+    profileComplete = !!profile?.is_complete;
   }
+
+  const target = redirectFor({ path, loggedIn: !!user, status, profileComplete });
+  if (target) return NextResponse.redirect(new URL(target, request.url));
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

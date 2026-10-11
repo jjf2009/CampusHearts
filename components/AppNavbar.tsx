@@ -1,100 +1,106 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import type { Gender } from "@/lib/supabase/types";
-import { CompassIcon, InboxIcon, LogoutIcon, SparkIcon, UserIcon } from "@/components/ui/icons";
+import { usePathname } from "next/navigation";
+import Logo from "@/components/ui/Logo";
+import { ChatIcon, CompassIcon, HeartIcon, SettingsIcon, UserIcon } from "@/components/ui/icons";
 
-export default function AppNavbar({ gender }: { gender: Gender }) {
-  const router = useRouter();
+export interface NavCounts {
+  likes: number;
+  unread: number;
+}
+
+function Badge({ n }: { n: number }) {
+  if (n <= 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-2.5 min-w-5 rounded-full border-2 border-ink bg-marker-pink px-1 text-center text-xs leading-4 font-bold text-white">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
+export default function AppNavbar({ counts, isAdmin = false }: { counts: NavCounts; isAdmin?: boolean }) {
   const pathname = usePathname();
-  const supabase = createClient();
 
-  // Women browse and send requests; men receive and answer them.
   const links = [
-    gender === "female"
-      ? { href: "/explore", label: "Explore", icon: CompassIcon }
-      : { href: "/requests", label: "Requests", icon: InboxIcon },
-    { href: "/matches", label: "Matches", icon: SparkIcon },
-    { href: "/profile", label: "Profile", icon: UserIcon },
+    { href: "/explore", label: "Browse", icon: CompassIcon, badge: 0, match: ["/explore", "/people"] },
+    { href: "/likes", label: "Likes", icon: HeartIcon, badge: counts.likes, match: ["/likes"] },
+    { href: "/chats", label: "Chats", icon: ChatIcon, badge: counts.unread, match: ["/chats"] },
+    { href: "/profile", label: "Profile", icon: UserIcon, badge: 0, match: ["/profile", "/settings"] },
   ];
-
-  async function logout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
+  const isActive = (match: string[]) => match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full border-b border-rose-soft/15 bg-cream/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <Link href={links[0].href} className="flex items-center gap-2">
-            <Image src="/CampusHeartLogo.png" alt="" width={32} height={32} />
-            <span className="font-serif text-lg font-medium text-charcoal">
-              Campus<span className="text-rose-deep">Heart</span>
-            </span>
+      <nav className="pt-safe sticky top-0 z-40 border-b-2 border-ink bg-paper/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+          <Link href="/explore" aria-label="Campus Buddy home">
+            <Logo size={30} />
           </Link>
 
           <div className="hidden items-center gap-1 sm:flex">
-            {links.map(({ href, label, icon: NavIcon }) => {
-              const active = pathname.startsWith(href);
+            {links.map(({ href, label, icon: NavIcon, badge, match }) => {
+              const active = isActive(match);
               return (
                 <Link
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                    active
-                      ? "bg-rose-soft/20 text-rose-ink"
-                      : "text-muted hover:bg-white hover:text-charcoal"
+                  className={`relative flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-lg transition ${
+                    active ? "border-ink bg-marker-yellow" : "border-transparent hover:border-ink"
                   }`}
                 >
-                  <NavIcon width={18} height={18} />
+                  <span className="relative">
+                    <NavIcon width={20} height={20} />
+                    <Badge n={badge} />
+                  </span>
                   {label}
                 </Link>
               );
             })}
-            <button
-              onClick={logout}
-              className="ml-2 flex items-center gap-2 rounded-full px-4 py-2 text-sm text-muted transition hover:bg-white hover:text-charcoal"
-            >
-              <LogoutIcon width={18} height={18} />
-              Log out
-            </button>
           </div>
 
-          <button
-            onClick={logout}
-            aria-label="Log out"
-            className="rounded-full p-2 text-muted transition hover:bg-white hover:text-charcoal sm:hidden"
-          >
-            <LogoutIcon />
-          </button>
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Link href="/admin" className="tape tape-sky text-sm">
+                Admin
+              </Link>
+            )}
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-transparent hover:border-ink"
+            >
+              <SettingsIcon width={22} height={22} />
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* Mobile tab bar */}
+      {/* Phone tab bar */}
       <nav
         aria-label="Primary"
-        className="pb-safe fixed inset-x-0 bottom-0 z-50 border-t border-rose-soft/15 bg-white/90 pt-2 backdrop-blur-md sm:hidden"
+        className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t-2 border-ink bg-paper pt-1.5 sm:hidden"
       >
         <div className="mx-auto flex max-w-md justify-around">
-          {links.map(({ href, label, icon: NavIcon }) => {
-            const active = pathname.startsWith(href);
+          {links.map(({ href, label, icon: NavIcon, badge, match }) => {
+            const active = isActive(match);
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-w-20 flex-col items-center gap-0.5 rounded-xl px-3 py-1 text-xs font-medium transition ${
-                  active ? "text-rose-ink" : "text-faint"
-                }`}
+                className="flex min-h-12 min-w-16 flex-col items-center justify-center rounded-xl px-2 text-[0.95rem] leading-tight"
               >
-                <NavIcon width={22} height={22} strokeWidth={active ? 2.2 : 1.8} />
-                {label}
+                <span
+                  className={`relative flex h-8 w-12 items-center justify-center rounded-full border-2 transition ${
+                    active ? "border-ink bg-marker-yellow" : "border-transparent"
+                  }`}
+                >
+                  <NavIcon width={22} height={22} strokeWidth={active ? 2.6 : 2.1} />
+                  <Badge n={badge} />
+                </span>
+                <span className={active ? "font-bold text-ink" : "text-muted"}>{label}</span>
               </Link>
             );
           })}
