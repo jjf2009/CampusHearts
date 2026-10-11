@@ -44,14 +44,9 @@ export default async function ExplorePage({
     (requests ?? []).filter((r) => r.receiver_id === user!.id && r.status === "pending").map((r) => r.sender_id)
   );
 
-  // profiles_public only returns verified, complete, opposite-gender profiles
-  // (plus yourself and people you share a request with), so filter those out.
-  let query = supabase
-    .from("profiles_public")
-    .select("*")
-    .eq("is_complete", true)
-    .neq("gender", me?.gender ?? "")
-    .neq("user_id", user!.id);
+  // profiles_public applies the dating/friends rules, blocks and bans. It also
+  // returns yourself and people you share a like/match with, filtered out below.
+  let query = supabase.from("profiles_public").select("*").eq("is_complete", true).neq("user_id", user!.id);
 
   if (filters.branch) query = query.eq("branch", filters.branch);
   if (filters.year) query = query.eq("year_of_study", filters.year);
@@ -74,7 +69,12 @@ export default async function ExplorePage({
     ? sortProfiles(
         rankCandidates(
           me,
-          ((candidates ?? []) as PublicProfile[]).filter((p) => !excludeIds.has(p.user_id))
+          ((candidates ?? []) as PublicProfile[]).filter(
+            (p) =>
+              !excludeIds.has(p.user_id) &&
+              p.discover_kinds?.length > 0 &&
+              (!filters.here || p.discover_kinds.includes(filters.here))
+          )
         ),
         params.sort
       ).map((p) => ({ ...p, likesYou: likesMe.has(p.user_id) }))
@@ -92,11 +92,8 @@ export default async function ExplorePage({
   const clearHref = params.view === "swipe" ? "/explore?view=swipe" : "/explore";
 
   return (
-    <div className={`mx-auto px-4 py-8 ${params.view === "swipe" ? "max-w-md" : "max-w-6xl"}`}>
-      <PageHeader
-        title="Find your freshers night partner"
-        subtitle="Search, filter, or swipe. People who fit your quiz preferences come first."
-      />
+    <div className={`mx-auto px-4 py-5 ${params.view === "swipe" ? "max-w-md" : "max-w-6xl"}`}>
+      <PageHeader title="Browse" subtitle="Find a date or a new buddy at GEC. Best matches first." />
       <FilterBar params={params} resultCount={ranked.length} />
       {params.view === "swipe" ? (
         // Remount when filters change so the deck starts from the top.
@@ -104,6 +101,7 @@ export default async function ExplorePage({
           key={JSON.stringify(params)}
           initialProfiles={ranked}
           hasPreferences={hasPreferences && params.sort === "match"}
+          preferredKind={filters.here}
         />
       ) : (
         <ProfileGrid

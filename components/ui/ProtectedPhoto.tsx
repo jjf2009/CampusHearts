@@ -17,7 +17,7 @@ const HOLD_DELAY_MS = 150;
 const MOVE_TOLERANCE_PX = 10;
 const MAX_REVEAL_MS = 8000;
 
-const ViewerContext = createContext<string>("CampusHearts");
+const ViewerContext = createContext<string>("Campus Buddy");
 
 export function ViewerWatermarkProvider({
   label,
@@ -214,7 +214,7 @@ export default function ProtectedPhoto({
       onPointerCancel={hide}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
-      className={`protected-photo ${/\babsolute\b/.test(className) ? "" : "relative"} overflow-hidden bg-gradient-to-br from-rose-soft/50 via-peach/40 to-lavender/50 ${
+      className={`protected-photo ${/\babsolute\b/.test(className) ? "" : "relative"} overflow-hidden bg-[repeating-linear-gradient(-45deg,#fff_0_10px,#f5efe0_10px_20px)] ${
         path ? "cursor-pointer" : ""
       } ${className}`}
     >
@@ -227,16 +227,16 @@ export default function ProtectedPhoto({
       />
 
       {!revealed && (
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-charcoal/70 backdrop-blur-xl">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-ink">
           <span
-            className={`flex h-12 w-12 items-center justify-center rounded-full bg-white/60 ${
+            className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink bg-white ${
               loading ? "animate-pulse" : ""
             }`}
           >
             <LockIcon width={22} height={22} />
           </span>
           {hint && path && (
-            <span className="rounded-full bg-white/60 px-3 py-1 text-xs font-medium">
+            <span className="tape text-sm">
               {loading ? "Unlocking…" : "Hold to view"}
             </span>
           )}

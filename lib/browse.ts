@@ -15,8 +15,12 @@ import type { Ranked } from "@/lib/matching";
 
 export type View = "swipe" | "grid";
 
+export type HereFor = "dating" | "friends";
+
 export interface BrowseFilters {
   q?: string;
+  /** Only people you can meet this way. */
+  here?: HereFor;
   branch?: string;
   year?: number;
   ageMin?: number;
@@ -71,6 +75,7 @@ export function parseBrowseParams(raw: RawParams): BrowseParams {
     sort: oneOf(p("sort"), SORTS.map((s) => s.id)) ?? "match",
     filters: {
       q: cleanSearch(p("q")),
+      here: oneOf(p("here"), ["dating", "friends"] as const),
       branch: oneOf(p("branch"), BRANCHES),
       year: oneOf(p("year") === undefined ? undefined : p("year"), YEARS),
       ageMin: int(p("ageMin"), AGE_MIN, AGE_MAX),

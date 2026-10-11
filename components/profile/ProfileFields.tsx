@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { Gender } from "@/lib/supabase/types";
+import type { Gender, HereFor, InterestedIn } from "@/lib/supabase/types";
 import {
   AGE_MAX,
   AGE_MIN,
@@ -53,20 +53,29 @@ export function FormSection({
   children: ReactNode;
 }) {
   return (
-    <section className="surface space-y-5 rounded-3xl p-5 sm:p-7">
+    <section className="sketch space-y-5 p-5 sm:p-7">
       <div>
-        <h2 className="font-serif text-xl text-charcoal">{title}</h2>
-        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        <h2 className="font-display text-3xl">{title}</h2>
+        {description && <p className="mt-1 text-base text-muted">{description}</p>}
       </div>
       {children}
     </section>
   );
 }
 
-export function GenderToggle({ value, onChange }: { value: Gender; onChange: (g: Gender) => void }) {
+export function GenderToggle({
+  value,
+  onChange,
+  locked = false,
+}: {
+  value: Gender;
+  onChange: (g: Gender) => void;
+  /** Gender comes from the admit card and can't be changed. */
+  locked?: boolean;
+}) {
   const options: { value: Gender; label: string; hint: string }[] = [
-    { value: "female", label: "Woman", hint: "You'll see men's profiles" },
-    { value: "male", label: "Man", hint: "You'll see women's profiles" },
+    { value: "female", label: "Woman", hint: locked ? "From your admit card" : "" },
+    { value: "male", label: "Man", hint: locked ? "From your admit card" : "" },
   ];
 
   return (
@@ -79,15 +88,14 @@ export function GenderToggle({ value, onChange }: { value: Gender; onChange: (g:
             type="button"
             role="radio"
             aria-checked={selected}
-            onClick={() => onChange(option.value)}
-            className={`rounded-2xl border p-4 text-left transition ${
-              selected
-                ? "border-rose-deep bg-blush ring-4 ring-rose-soft/20"
-                : "border-rose-soft/25 bg-white hover:border-rose-soft"
+            disabled={locked && !selected}
+            onClick={() => !locked && onChange(option.value)}
+            className={`min-h-14 rounded-[var(--wobble-sm)] border-2 p-3 text-left transition disabled:opacity-40 ${
+              selected ? "border-ink bg-marker-yellow shadow-[2px_2px_0_#23201b]" : "border-ink/25 bg-white"
             }`}
           >
-            <span className="block font-medium text-charcoal">{option.label}</span>
-            <span className="mt-1 block text-xs leading-snug text-muted">{option.hint}</span>
+            <span className="block text-lg font-bold">{option.label}</span>
+            {selected && option.hint && <span className="block text-sm text-muted">{option.hint}</span>}
           </button>
         );
       })}
@@ -107,10 +115,8 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(year)}
-            className={`h-11 w-11 rounded-full border text-sm font-medium transition ${
-              selected
-                ? "border-transparent bg-rose-deep text-white"
-                : "border-rose-soft/30 bg-white text-charcoal hover:border-rose-deep"
+            className={`h-12 w-12 rounded-full border-2 text-lg font-bold transition ${
+              selected ? "border-ink bg-marker-pink text-white" : "border-ink/25 bg-white"
             }`}
           >
             {year}
@@ -145,10 +151,8 @@ export function ChipMultiSelect<T extends string | number>({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(selected ? value.filter((v) => v !== option) : [...value, option])}
-            className={`rounded-full border px-3.5 py-1.5 text-sm transition ${
-              selected
-                ? "border-transparent bg-rose-deep text-white"
-                : "border-rose-soft/30 bg-white text-charcoal hover:border-rose-deep"
+            className={`min-h-11 rounded-full border-2 px-4 text-base transition ${
+              selected ? "border-ink bg-marker-pink text-white" : "border-ink/25 bg-white"
             }`}
           >
             {format(option)}
@@ -259,7 +263,7 @@ export function InterestsInput({
       {value.map((interest) => (
         <span
           key={interest}
-          className="flex items-center gap-1 rounded-full bg-peach/40 py-1 pr-1.5 pl-3 text-sm text-charcoal"
+          className="chip bg-marker-sky/50"
         >
           {interest}
           <button
@@ -342,10 +346,10 @@ function PhotoTile({
       ) : (
         <label
           htmlFor={inputId}
-          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition ${
+          className={`group flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[var(--wobble-sm)] border-2 border-dashed transition ${
             slot
               ? "border-transparent"
-              : "border-rose-soft/40 bg-blush text-rose-deep hover:border-rose-deep hover:bg-white"
+              : "border-ink/50 bg-white text-ink hover:bg-marker-yellow"
           }`}
         >
           {slot ? (
@@ -403,14 +407,14 @@ export function PhotoPicker({
 export function FormMessage({ error, success }: { error?: string | null; success?: string | null }) {
   if (error) {
     return (
-      <p role="alert" className="rounded-xl bg-rose-soft/15 px-4 py-3 text-sm text-rose-ink">
+      <p role="alert" className="sketch bg-rose-soft px-4 py-3 text-base">
         {error}
       </p>
     );
   }
   if (success) {
     return (
-      <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+      <p role="status" className="sketch bg-marker-mint px-4 py-3 text-base">
         {success}
       </p>
     );
@@ -457,9 +461,12 @@ export function detailsToColumns(d: ProfileDetails) {
 export function ProfileDetailsFields({
   value,
   onChange,
+  ageLocked = false,
 }: {
   value: ProfileDetails;
   onChange: (next: ProfileDetails) => void;
+  /** Age comes from the date of birth on the admit card. */
+  ageLocked?: boolean;
 }) {
   const set = <K extends keyof ProfileDetails>(key: K, v: ProfileDetails[K]) =>
     onChange({ ...value, [key]: v });
@@ -467,8 +474,12 @@ export function ProfileDetailsFields({
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Age" htmlFor="age">
-          <NumberInput id="age" required min={AGE_MIN} max={AGE_MAX} value={value.age} onChange={(v) => set("age", v)} />
+        <Field label="Age" htmlFor="age" hint={ageLocked ? "From your admit card" : undefined}>
+          {ageLocked ? (
+            <input id="age" value={value.age} readOnly className="input-field bg-paper-2" />
+          ) : (
+            <NumberInput id="age" required min={AGE_MIN} max={AGE_MAX} value={value.age} onChange={(v) => set("age", v)} />
+          )}
         </Field>
         <Field label="Branch" htmlFor="branch">
           <SelectInput
@@ -509,5 +520,83 @@ export function ProfileDetailsFields({
         />
       </Field>
     </>
+  );
+}
+
+const HERE_FOR_OPTIONS: { value: HereFor; emoji: string; label: string; hint: string }[] = [
+  { value: "dating", emoji: "💘", label: "Dating", hint: "Find a date" },
+  { value: "friends", emoji: "🤝", label: "Friends", hint: "Meet new buddies" },
+  { value: "both", emoji: "✨", label: "Both", hint: "Open to either" },
+];
+
+const INTERESTED_OPTIONS: { value: InterestedIn; label: string }[] = [
+  { value: "men", label: "Men" },
+  { value: "women", label: "Women" },
+  { value: "everyone", label: "Everyone" },
+];
+
+/** What you're here for, and (for dating) who you'd like to see. */
+export function HereForFields({
+  hereFor,
+  interestedIn,
+  onChange,
+}: {
+  hereFor: HereFor;
+  interestedIn: InterestedIn | null;
+  onChange: (next: { hereFor: HereFor; interestedIn: InterestedIn | null }) => void;
+}) {
+  const wantsDating = hereFor !== "friends";
+  return (
+    <div className="space-y-5">
+      <div role="radiogroup" aria-label="I'm here for" className="grid grid-cols-3 gap-2">
+        {HERE_FOR_OPTIONS.map((o) => {
+          const selected = hereFor === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange({ hereFor: o.value, interestedIn })}
+              className={`flex flex-col items-center rounded-[var(--wobble-sm)] border-2 px-2 py-3 transition ${
+                selected ? "border-ink bg-marker-yellow shadow-[2px_2px_0_#23201b]" : "border-ink/25 bg-white"
+              }`}
+            >
+              <span className="text-3xl" aria-hidden="true">
+                {o.emoji}
+              </span>
+              <span className="text-lg font-bold">{o.label}</span>
+              <span className="text-sm leading-tight text-muted">{o.hint}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {wantsDating && (
+        <div>
+          <p className="field-label">For dating, show me</p>
+          <div role="radiogroup" aria-label="For dating, show me" className="flex flex-wrap gap-2">
+            {INTERESTED_OPTIONS.map((o) => {
+              const selected = interestedIn === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onChange({ hereFor, interestedIn: o.value })}
+                  className={`min-h-11 rounded-full border-2 px-5 text-lg ${
+                    selected ? "border-ink bg-marker-pink text-white" : "border-ink/25 bg-white"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="field-hint">Friends mode always shows everyone, whatever their gender.</p>
+        </div>
+      )}
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import type { RankedProfile } from "@/components/explore/ExploreDeck";
 
 function Grid({ profiles, showFit = false }: { profiles: RankedProfile[]; showFit?: boolean }) {
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
       {profiles.map((p) => (
         <ProfileCard key={p.user_id} profile={p} showFit={showFit} />
       ))}
@@ -58,7 +58,7 @@ export default function ProfileGrid({
     <div className="space-y-8">
       <Grid profiles={fits} />
       <section>
-        <h2 className="font-serif text-xl text-charcoal">More people you might like</h2>
+        <h2 className="font-display text-3xl">More people you might like</h2>
         <p className="mt-1 mb-4 text-sm text-muted">
           Outside your quiz preferences, but still worth a look.{" "}
           <Link href="/profile" className="text-rose-ink underline-offset-4 hover:underline">

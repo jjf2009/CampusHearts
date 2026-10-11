@@ -15,11 +15,13 @@ import {
   YEARS,
 } from "@/lib/profileOptions";
 import { XIcon } from "@/components/ui/icons";
+import Sheet from "@/components/ui/Sheet";
 
 type FilterKey = keyof BrowseFilters;
 
 const LABELS: Record<FilterKey, string> = {
   q: "Search",
+  here: "Here for",
   branch: "Branch",
   year: "Year",
   ageMin: "Age from",
@@ -33,6 +35,7 @@ const LABELS: Record<FilterKey, string> = {
 };
 
 function chipText(key: FilterKey, value: string | number) {
+  if (key === "here") return value === "dating" ? "💘 Dating" : "🤝 Friends";
   if (key === "year") return `Year ${value}`;
   if (key === "lookingFor") return LOOKING_FOR_OPTIONS.find((o) => o.id === value)?.label ?? String(value);
   if (key === "heightMin" || key === "heightMax") return `${LABELS[key]} ${value} cm`;
@@ -187,9 +190,9 @@ export default function FilterBar({ params, resultCount }: { params: BrowseParam
   ) as [FilterKey, string | number][];
 
   return (
-    <div className="mb-6 space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="View" className="flex rounded-full bg-white p-1 shadow-sm">
+    <div className="mb-5 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div role="tablist" aria-label="View" className="flex rounded-full border-2 border-ink bg-white p-0.5">
           {(["grid", "swipe"] as const).map((view) => (
             <button
               key={view}
@@ -197,8 +200,8 @@ export default function FilterBar({ params, resultCount }: { params: BrowseParam
               role="tab"
               aria-selected={params.view === view}
               onClick={() => navigate({ view: view === "grid" ? undefined : view })}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                params.view === view ? "bg-rose-deep text-white" : "text-muted hover:text-charcoal"
+              className={`min-h-10 rounded-full px-4 text-lg transition ${
+                params.view === view ? "bg-ink text-paper" : "text-ink"
               }`}
             >
               {view === "grid" ? "Browse" : "Swipe"}
@@ -206,70 +209,104 @@ export default function FilterBar({ params, resultCount }: { params: BrowseParam
           ))}
         </div>
 
+        <div role="radiogroup" aria-label="Here for" className="flex gap-1">
+          {([undefined, "dating", "friends"] as const).map((here) => {
+            const selected = params.filters.here === here;
+            return (
+              <button
+                key={here ?? "all"}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => navigate({ here })}
+                className={`min-h-10 rounded-full border-2 px-3 text-base transition ${
+                  selected ? "border-ink bg-marker-yellow" : "border-ink/25 bg-white"
+                }`}
+              >
+                {here === "dating" ? "💘" : here === "friends" ? "🤝" : "All"}
+                <span className="sr-only">{here ?? "everyone"}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name, hometown, bio…"
+          placeholder="Search name, place, bio…"
           aria-label="Search profiles"
-          className="input-field order-last min-w-0 flex-1 basis-full !py-2.5 sm:order-none sm:w-auto sm:basis-0"
+          className="input-field min-w-0 flex-1"
         />
-
-        <select
-          aria-label="Sort by"
-          value={params.sort}
-          onChange={(e) => navigate({ sort: e.target.value === "match" ? undefined : e.target.value })}
-          className="input-field ml-auto !w-auto bg-white !py-2.5 sm:ml-0"
-        >
-          {SORTS.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-
         <button
           type="button"
           onClick={() => (open ? setOpen(false) : openPanel())}
           aria-expanded={open}
-          className="btn-ghost rounded-full px-4 py-2.5 text-sm font-medium"
+          className="btn-ghost shrink-0 rounded-full px-4 text-lg"
         >
           Filters{activeCount > 0 ? ` (${activeCount})` : ""}
         </button>
       </div>
 
-      {chips.length > 0 && (
-        <ul className="flex flex-wrap gap-2">
-          {chips.map(([key, value]) => (
-            <li key={key}>
-              <button
-                type="button"
-                onClick={() => navigate({ [key]: undefined })}
-                className="flex items-center gap-1 rounded-full bg-rose-soft/20 py-1 pr-2 pl-3 text-sm text-rose-ink"
-                aria-label={`Remove filter ${chipText(key, value)}`}
-              >
-                {chipText(key, value)}
-                <XIcon width={14} height={14} />
-              </button>
-            </li>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="sr-only" htmlFor="sort">
+          Sort by
+        </label>
+        <select
+          id="sort"
+          value={params.sort}
+          onChange={(e) => navigate({ sort: e.target.value === "match" ? undefined : e.target.value })}
+          className="input-field !min-h-10 !w-auto !py-1 text-base"
+        >
+          {SORTS.map((s) => (
+            <option key={s.id} value={s.id}>
+              Sort: {s.label}
+            </option>
           ))}
-          <li>
-            <button type="button" onClick={clearAll} className="px-2 py-1 text-sm text-muted hover:text-charcoal">
-              Clear all
-            </button>
-          </li>
-        </ul>
-      )}
+        </select>
+        {chips.map(([key, value]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => navigate({ [key]: undefined })}
+            className="chip min-h-10 bg-marker-yellow"
+            aria-label={`Remove filter ${chipText(key, value)}`}
+          >
+            {chipText(key, value)}
+            <XIcon width={14} height={14} />
+          </button>
+        ))}
+        {chips.length > 0 && (
+          <button type="button" onClick={clearAll} className="min-h-10 px-2 text-base text-muted underline">
+            Clear all
+          </button>
+        )}
+        <span className="ml-auto text-base text-muted" aria-live="polite">
+          {resultCount} {resultCount === 1 ? "person" : "people"}
+        </span>
+      </div>
 
-      {open && (
+      <Sheet open={open} onClose={() => setOpen(false)} title="Filters">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             applyPanel();
           }}
-          className="surface space-y-5 rounded-3xl p-5"
+          className="space-y-4 pb-5"
         >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectFilter
+              id="f-here"
+              label="Here for"
+              value={d("here")}
+              onChange={setD("here")}
+              options={[
+                { value: "dating", label: "💘 Dating" },
+                { value: "friends", label: "🤝 Friends" },
+              ]}
+            />
             <SelectFilter id="f-branch" label="Branch" value={d("branch")} onChange={setD("branch")} options={toOptions(BRANCHES)} />
             <SelectFilter
               id="f-year"
@@ -299,13 +336,7 @@ export default function FilterBar({ params, resultCount }: { params: BrowseParam
                 className="input-field"
               />
             </div>
-            <SelectFilter
-              id="f-religion"
-              label="Religion"
-              value={d("religion")}
-              onChange={setD("religion")}
-              options={toOptions(RELIGIONS)}
-            />
+            <SelectFilter id="f-religion" label="Religion" value={d("religion")} onChange={setD("religion")} options={toOptions(RELIGIONS)} />
             <SelectFilter
               id="f-looking"
               label="Looking for"
@@ -324,20 +355,16 @@ export default function FilterBar({ params, resultCount }: { params: BrowseParam
             />
             <SelectFilter id="f-lang" label="Speaks" value={d("lang")} onChange={setD("lang")} options={toOptions(LANGUAGES)} />
           </div>
-          <div className="flex items-center justify-end gap-3">
-            <button type="button" onClick={clearAll} className="px-3 py-2 text-sm text-muted hover:text-charcoal">
+          <div className="sticky bottom-0 grid grid-cols-2 gap-3 bg-paper pt-2">
+            <button type="button" onClick={clearAll} className="btn-ghost rounded-full px-4 py-2.5">
               Clear all
             </button>
-            <button type="submit" className="btn-primary rounded-full px-6 py-2.5 text-sm font-medium text-white">
+            <button type="submit" className="btn-primary rounded-full px-4 py-2.5">
               Show results
             </button>
           </div>
         </form>
-      )}
-
-      <p className="text-sm text-muted" aria-live="polite">
-        {resultCount} {resultCount === 1 ? "person" : "people"}
-      </p>
+      </Sheet>
     </div>
   );
 }

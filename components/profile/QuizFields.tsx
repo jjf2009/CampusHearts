@@ -37,7 +37,7 @@ export default function QuizFields({
       <ol className="space-y-6">
         {QUIZ.map((q, n) => (
           <li key={q.id}>
-            <p id={`quiz-${q.id}`} className="mb-2.5 text-sm font-medium text-charcoal">
+            <p id={`quiz-${q.id}`} className="mb-2 text-lg font-bold">
               <span className="mr-1.5 text-faint">{n + 1}.</span>
               {q.prompt}
             </p>
@@ -53,10 +53,10 @@ export default function QuizFields({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => set(q.id, option.id)}
-                      className={`rounded-full border px-3.5 py-2 text-sm transition ${
+                      className={`min-h-11 rounded-full border-2 px-3.5 py-1.5 text-base transition ${
                         selected
-                          ? "border-transparent bg-rose-deep text-white"
-                          : "border-rose-soft/30 bg-white text-charcoal hover:border-rose-deep"
+                          ? "border-ink bg-marker-pink text-white"
+                          : "border-ink/25 bg-white hover:border-ink"
                       }`}
                     >
                       <span aria-hidden="true" className="mr-1">
@@ -80,10 +80,10 @@ export default function QuizFields({
                         aria-checked={selected}
                         aria-label={`${n} of ${SCALE_MAX}`}
                         onClick={() => set(q.id, n)}
-                        className={`h-11 flex-1 rounded-xl border text-sm font-medium transition ${
+                        className={`h-12 flex-1 rounded-[var(--wobble-sm)] border-2 text-lg font-bold transition ${
                           selected
-                            ? "border-transparent bg-rose-deep text-white"
-                            : "border-rose-soft/30 bg-white text-charcoal hover:border-rose-deep"
+                            ? "border-ink bg-marker-pink text-white"
+                            : "border-ink/25 bg-white hover:border-ink"
                         }`}
                       >
                         {n}
@@ -138,9 +138,9 @@ function PreferenceFields({
   }
 
   return (
-    <div className="space-y-5 border-t border-rose-soft/20 pt-6">
+    <div className="space-y-5 border-t-2 border-dashed border-ink/30 pt-6">
       <div>
-        <h3 className="font-serif text-lg text-charcoal">Who would you like to go with?</h3>
+        <h3 className="font-display text-3xl">Who would you like to meet?</h3>
         <p className="mt-1 text-sm text-muted">
           Optional. Leave anything blank for &ldquo;any&rdquo;. People who fit are shown first, and you&apos;ll
           still see everyone else after them.
