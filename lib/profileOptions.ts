@@ -1,15 +1,16 @@
 // Option lists shared by profile setup, the quiz preferences and the filters.
 // Edit these to fit your college.
 
+// Goa College of Engineering branches (see mapBranch in lib/admitCard.ts).
 export const BRANCHES = [
   "Computer",
   "IT",
   "E&TC",
-  "Electronics",
-  "Electrical",
+  "Electronics & Computer",
+  "Electrical & Electronics",
   "Mechanical",
   "Civil",
-  "Chemical",
+  "VLSI",
   "Other",
 ] as const;
 

@@ -1,49 +1,59 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Field, FormMessage, FormSection } from "@/components/profile/ProfileFields";
-import { FileIcon, LockIcon, LogoutIcon, ShieldIcon } from "@/components/ui/icons";
+import type { VerificationStatus } from "@/lib/supabase/types";
+import { FormMessage } from "@/components/profile/ProfileFields";
+import { LogoMark } from "@/components/ui/Logo";
+import { CameraIcon, FileIcon, LockIcon, LogoutIcon, ShieldIcon } from "@/components/ui/icons";
 
-export default function VerifyAdmission() {
+type Mode = "pdf" | "photo";
+
+export default function VerifyAdmission({
+  email,
+  status,
+  lastReason,
+}: {
+  email: string;
+  status: VerificationStatus | null;
+  lastReason: string | null;
+}) {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("pdf");
   const [file, setFile] = useState<File | null>(null);
-  const [fullName, setFullName] = useState("");
-  const [admissionNumber, setAdmissionNumber] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(lastReason);
+  const [done, setDone] = useState<{ status: "verified" | "pending_review"; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reupload, setReupload] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const pending = (status === "pending_review" && !reupload) || done?.status === "pending_review";
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!file) {
-      setError("Attach your admission letter PDF.");
-      return;
-    }
+    if (!file) return setError(mode === "pdf" ? "Choose your admit card PDF." : "Take or choose a photo of your admit card.");
 
     setLoading(true);
     const body = new FormData();
-    body.append("pdf", file);
-    body.append("fullName", fullName);
-    body.append("admissionNumber", admissionNumber);
-
-    const res = await fetch("/api/verify-admission", { method: "POST", body });
-    const json = (await res.json().catch(() => ({}))) as { ok?: boolean; reason?: string };
+    body.append(mode, file);
+    const res = await fetch("/api/verify-admission", { method: "POST", body }).catch(() => null);
+    const json = (await res?.json().catch(() => ({}))) as {
+      ok?: boolean;
+      reason?: string;
+      status?: "verified" | "pending_review";
+      message?: string;
+    };
     setLoading(false);
 
-    if (!res.ok || !json.ok) {
-      setError(json.reason ?? "Something went wrong. Please try again.");
-      return;
+    if (!res || !res.ok || !json.ok) return setError(json?.reason ?? "Upload failed. Check your connection and try again.");
+    setDone({ status: json.status!, message: json.message ?? "" });
+    if (json.status === "verified") {
+      setTimeout(() => {
+        router.push("/profile-setup");
+        router.refresh();
+      }, 1200);
     }
-
-    setSuccess(true);
-    setTimeout(() => {
-      router.push("/profile-setup");
-      router.refresh();
-    }, 900);
   }
 
   async function logout() {
@@ -53,105 +63,146 @@ export default function VerifyAdmission() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-warm">
-      <div className="mx-auto max-w-xl px-4 pt-10 pb-16">
-        <div className="mb-8 text-center">
-          <Image src="/CampusHeartLogo.png" alt="" width={56} height={56} className="mx-auto" />
-          <p className="eyebrow mt-4">Step 1 of 2</p>
-          <h1 className="mt-2 font-serif text-3xl text-charcoal sm:text-4xl">Show you&apos;re a fresher</h1>
-          <p className="mx-auto mt-2 max-w-sm text-muted">
-            No ID card or college email yet? Upload the admission letter PDF the college sent you. It&apos;s
-            checked automatically in seconds.
-          </p>
-        </div>
+    <div className="mx-auto min-h-dvh max-w-xl px-4 pt-8 pb-16">
+      <div className="mb-6 text-center">
+        <LogoMark size={56} className="mx-auto animate-wiggle" />
+        <p className="eyebrow mt-4">Step 1 · Verify</p>
+        <h1 className="mt-2 font-display text-5xl">Are you at GEC?</h1>
+        <p className="mx-auto mt-2 max-w-sm text-lg text-muted">
+          Campus Buddy is only for Goa College of Engineering students.
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <FormSection title="Admission letter">
+      {pending ? (
+        <div className="sketch space-y-4 p-6 text-center">
+          <p className="text-5xl" aria-hidden="true">
+            🕵️
+          </p>
+          <h2 className="font-display text-4xl">We&apos;re checking your card</h2>
+          <p className="text-lg">
+            {done?.message || "An admin will look at it soon, usually within a day. Come back and refresh this page."}
+          </p>
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => router.refresh()} className="btn-primary rounded-full px-5 py-3 text-xl">
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDone(null);
+                setReupload(true);
+                setFile(null);
+              }}
+              className="text-lg text-muted underline"
+            >
+              Upload a different file instead
+            </button>
+          </div>
+        </div>
+      ) : done?.status === "verified" ? (
+        <div className="sketch animate-pop-in bg-marker-mint p-6 text-center">
+          <p className="text-5xl" aria-hidden="true">
+            🎉
+          </p>
+          <h2 className="font-display text-4xl">You&apos;re in!</h2>
+          <p className="text-lg">Setting up your profile…</p>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-5">
+          <div className="sketch space-y-4 p-5">
+            <h2 className="font-display text-3xl">Freshers: upload your admit card</h2>
+
+            <div role="tablist" aria-label="Upload type" className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["pdf", "PDF from portal", "Instant ⚡", FileIcon],
+                  ["photo", "Photo of card", "Checked by admin", CameraIcon],
+                ] as const
+              ).map(([id, label, hint, Icon]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === id}
+                  onClick={() => {
+                    setMode(id);
+                    setFile(null);
+                    setError(null);
+                  }}
+                  className={`flex flex-col items-center rounded-[var(--wobble-sm)] border-2 px-2 py-3 ${
+                    mode === id ? "border-ink bg-marker-yellow shadow-[2px_2px_0_#23201b]" : "border-ink/25 bg-white"
+                  }`}
+                >
+                  <Icon width={24} height={24} />
+                  <span className="text-lg font-bold">{label}</span>
+                  <span className="text-sm text-muted">{hint}</span>
+                </button>
+              ))}
+            </div>
+
             <label
-              htmlFor="pdf"
-              className={`flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed p-5 transition ${
-                file
-                  ? "border-rose-deep bg-blush"
-                  : "border-rose-soft/40 bg-white hover:border-rose-deep"
+              htmlFor="card-file"
+              className={`flex min-h-24 cursor-pointer items-center gap-4 rounded-[var(--wobble)] border-2 border-dashed p-4 ${
+                file ? "border-ink bg-marker-mint/50" : "border-ink/50 bg-white hover:bg-marker-yellow/40"
               }`}
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-soft/20 text-rose-ink">
-                <FileIcon width={22} height={22} />
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white">
+                {mode === "pdf" ? <FileIcon /> : <CameraIcon />}
               </span>
               <span className="min-w-0">
-                <span className="block truncate font-medium text-charcoal">
-                  {file ? file.name : "Choose your admission PDF"}
+                <span className="block truncate text-lg font-bold">
+                  {file ? file.name : mode === "pdf" ? "Choose the admit card PDF" : "Take or choose a photo"}
                 </span>
-                <span className="block text-xs text-muted">
-                  {file ? `${(file.size / 1024).toFixed(0)} KB · tap to change` : "Original PDF only, under 5 MB"}
+                <span className="block text-sm text-muted">
+                  {file
+                    ? `${(file.size / 1024).toFixed(0)} KB · tap to change`
+                    : mode === "pdf"
+                      ? "The PROVISIONAL ADMIT CARD PDF you downloaded. Under 5 MB."
+                      : "Whole card in frame, flat, well lit, readable. Under 8 MB."}
                 </span>
               </span>
               <input
-                id="pdf"
+                key={mode}
+                id="card-file"
                 type="file"
-                accept="application/pdf"
+                accept={mode === "pdf" ? "application/pdf" : "image/jpeg,image/png,image/webp"}
+                capture={mode === "photo" ? "environment" : undefined}
                 className="sr-only"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
             </label>
 
-            <Field label="Full name (exactly as on the letter)" htmlFor="fullName">
-              <input
-                id="fullName"
-                required
-                autoComplete="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="input-field"
-              />
-            </Field>
+            <ul className="space-y-1.5 text-base text-muted">
+              <li className="flex items-start gap-2">
+                <ShieldIcon width={18} height={18} className="mt-0.5 shrink-0 text-rose-ink" />
+                We read your name, gender, branch and date of birth from the card, so you don&apos;t have to type them.
+              </li>
+              <li className="flex items-start gap-2">
+                <LockIcon width={18} height={18} className="mt-0.5 shrink-0 text-rose-ink" />
+                The card is encrypted, never shown to students, and one card works for one account only.
+              </li>
+            </ul>
+          </div>
 
-            <Field
-              label="Admission / application number"
-              htmlFor="admissionNumber"
-              hint="One admission letter can only be linked to one account."
-            >
-              <input
-                id="admissionNumber"
-                required
-                value={admissionNumber}
-                onChange={(e) => setAdmissionNumber(e.target.value)}
-                className="input-field uppercase"
-              />
-            </Field>
-          </FormSection>
+          <FormMessage error={error} />
 
-          <ul className="space-y-2 px-1 text-sm text-muted">
-            <li className="flex items-start gap-2">
-              <ShieldIcon width={16} height={16} className="mt-0.5 shrink-0 text-rose-ink" />
-              We check the college name, intake year, your name and admission number.
-            </li>
-            <li className="flex items-start gap-2">
-              <LockIcon width={16} height={16} className="mt-0.5 shrink-0 text-rose-ink" />
-              Your letter is stored privately for verification only and is never shown to anyone.
-            </li>
-          </ul>
-
-          <FormMessage error={error} success={success ? "You're verified! Setting up your profile…" : null} />
-
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="btn-primary w-full rounded-full px-4 py-4 text-lg font-medium text-white disabled:opacity-60"
-          >
-            {loading ? "Checking your letter…" : "Verify me"}
+          <button type="submit" disabled={loading} className="btn-primary w-full rounded-full px-4 py-3 text-xl disabled:opacity-60">
+            {loading ? "Checking your card…" : mode === "pdf" ? "Verify me" : "Send for review"}
           </button>
 
-          <button
-            type="button"
-            onClick={logout}
-            className="mx-auto flex items-center gap-1.5 text-sm text-muted hover:text-charcoal"
-          >
-            <LogoutIcon width={16} height={16} />
-            Use a different account
-          </button>
+          <div className="sketch sketch-alt bg-marker-sky/40 p-4 text-base">
+            <p className="font-bold">Seniors &amp; anyone with a working GEC email</p>
+            <p className="text-muted">
+              Log in with your <b>@gec.ac.in</b> address instead and you&apos;re verified automatically.
+            </p>
+          </div>
         </form>
-      </div>
+      )}
+
+      <button type="button" onClick={logout} className="mx-auto mt-6 flex min-h-11 items-center gap-1.5 text-lg text-muted hover:text-ink">
+        <LogoutIcon width={18} height={18} />
+        Not {email}? Log out
+      </button>
     </div>
   );
 }

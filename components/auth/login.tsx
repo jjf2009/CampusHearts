@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeftIcon, HeartIcon, LockIcon, MailIcon, ShieldIcon } from "@/components/ui/icons";
+import { friendlyError } from "@/lib/errors";
+import { ArrowLeftIcon, MailIcon } from "@/components/ui/icons";
+import { LogoMark } from "@/components/ui/Logo";
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 30;
@@ -38,7 +39,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({ email });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
       return;
     }
     setCode("");
@@ -57,7 +58,7 @@ export default function Login() {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
       return;
     }
     // proxy.ts routes to profile setup or the right home screen
@@ -66,65 +67,29 @@ export default function Login() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Brand panel (desktop) */}
-      <aside className="relative hidden overflow-hidden bg-gradient-to-br from-rose-soft/40 via-peach/30 to-lavender/30 lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div className="absolute -top-20 -left-20 h-80 w-80 rounded-full bg-white/30 blur-3xl" />
-        <div className="absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-rose-soft/30 blur-3xl" />
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 py-6">
+      <Link href="/" className="flex min-h-11 w-fit items-center gap-1.5 text-lg text-muted hover:text-ink">
+        <ArrowLeftIcon width={18} height={18} />
+        Home
+      </Link>
 
-        <Link href="/" className="relative flex items-center gap-2">
-          <Image src="/CampusHeartLogo.png" alt="" width={40} height={40} />
-          <span className="font-serif text-xl font-medium text-charcoal">
-            Campus<span className="text-rose-ink">Heart</span>
-          </span>
-        </Link>
-
-        <div className="relative max-w-md">
-          <h2 className="font-serif text-4xl leading-tight text-charcoal">
-            Someone on your campus <span className="text-rose-ink italic">is worth meeting.</span>
-          </h2>
-          <ul className="mt-8 space-y-4 text-charcoal/80">
-            <li className="flex items-center gap-3">
-              <ShieldIcon className="text-rose-ink" /> Verified students only (admission letter or college email)
-            </li>
-            <li className="flex items-center gap-3">
-              <HeartIcon className="text-rose-ink" /> Matched by a freshers night quiz
-            </li>
-            <li className="flex items-center gap-3">
-              <LockIcon className="text-rose-ink" /> Photos encrypted, hold-to-view only
-            </li>
-          </ul>
-        </div>
-
-        <p className="relative text-sm text-charcoal/60">Made for college students in Goa.</p>
-      </aside>
-
-      {/* Form */}
-      <main className="flex flex-col bg-gradient-warm px-4 py-8 sm:px-8">
-        <Link
-          href="/"
-          className="flex w-fit items-center gap-1.5 text-sm text-muted transition hover:text-charcoal"
-        >
-          <ArrowLeftIcon width={16} height={16} />
-          Home
-        </Link>
-
-        <div className="flex flex-1 items-center justify-center py-10">
-          <div className="w-full max-w-sm">
-            <Image
-              src="/CampusHeartLogo.png"
-              alt=""
-              width={56}
-              height={56}
-              className="mb-6 lg:hidden"
-            />
-
+      <div className="flex flex-1 items-center justify-center py-6">
+          <div className="sketch w-full p-6">
+            <LogoMark size={56} className="mb-3 animate-wiggle" />
             {step === "email" ? (
               <>
-                <h1 className="font-serif text-3xl text-charcoal">Welcome</h1>
-                <p className="mt-2 text-muted">
-                  Sign in with any email you check. We&apos;ll send you a 6-digit code. Freshers: no college email yet? No problem.
+                <h1 className="font-display text-5xl">Hey there!</h1>
+                <p className="mt-2 text-lg text-muted">
+                  We&apos;ll email you a 6-digit code. No passwords.
                 </p>
+                <ul className="mt-3 space-y-1 text-base">
+                  <li>
+                    🎓 <b>Seniors:</b> use your <b>@gec.ac.in</b> email
+                  </li>
+                  <li>
+                    🆕 <b>Freshers:</b> any email + your admit card next
+                  </li>
+                </ul>
 
                 <form onSubmit={sendCode} className="mt-8 space-y-4">
                   <div>
@@ -143,7 +108,7 @@ export default function Login() {
                         required
                         autoComplete="email"
                         autoFocus
-                        placeholder="you@gmail.com"
+                        placeholder="you@gec.ac.in or any email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="input-field pl-11"
@@ -164,13 +129,14 @@ export default function Login() {
                   </button>
                 </form>
 
-                <p className="mt-6 text-xs leading-relaxed text-faint">
-                  College emails are verified instantly. Freshers verify with their admission letter PDF next. No passwords to remember.
+                <p className="mt-5 text-sm text-faint">
+                  By continuing you agree to the <Link href="/terms" className="underline">terms</Link> and{" "}
+                  <Link href="/safety" className="underline">community rules</Link>.
                 </p>
               </>
             ) : (
               <>
-                <h1 className="font-serif text-3xl text-charcoal">Check your inbox</h1>
+                <h1 className="font-display text-5xl">Check your inbox</h1>
                 <p className="mt-2 text-muted">
                   We sent a code to <span className="font-medium text-charcoal">{email}</span>
                 </p>
@@ -200,10 +166,10 @@ export default function Login() {
                         return (
                           <div
                             key={i}
-                            className={`flex h-14 items-center justify-center rounded-xl border bg-white text-2xl font-medium text-charcoal transition ${
+                            className={`flex h-14 items-center justify-center rounded-[var(--wobble-sm)] border-2 bg-white text-3xl font-bold transition ${
                               active
-                                ? "border-rose-soft/25 group-focus-within:border-rose-deep group-focus-within:ring-4 group-focus-within:ring-rose-soft/20"
-                                : "border-rose-soft/25"
+                                ? "border-ink group-focus-within:bg-marker-yellow"
+                                : "border-ink"
                             }`}
                           >
                             {code[i] ?? ""}
@@ -251,8 +217,7 @@ export default function Login() {
               </>
             )}
           </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

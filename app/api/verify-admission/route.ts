@@ -1,111 +1,94 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { extractText, getDocumentProxy } from "unpdf";
+import { extractText, getDocumentProxy, getMeta } from "unpdf";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  admissionConfigFromEnv,
-  checkAdmissionText,
-  normalizeAdmissionNumber,
-} from "@/lib/admissionCheck";
+import { encryptPhoto } from "@/lib/photoCrypto";
+import { handleCardUpload, type VerificationDeps } from "@/lib/verification";
 
 export const runtime = "nodejs";
 
-const MAX_PDF_BYTES = 5 * 1024 * 1024;
-const MAX_ATTEMPTS = 5;
+const LIVE_STATUSES = ["verified", "pending_review", "banned"];
 
-function fail(reason: string, status = 400) {
-  return NextResponse.json({ ok: false, reason }, { status });
-}
-
+/** Upload a GEC admit card: the portal PDF (instant) or a photo (admin review). */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return fail("Please log in first.", 401);
-
-  const admin = createAdminClient();
-  const { data: existing } = await admin
-    .from("verifications")
-    .select("status, attempts")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (existing?.status === "verified") return NextResponse.json({ ok: true });
-  const attempts = existing?.attempts ?? 0;
-  if (attempts >= MAX_ATTEMPTS) {
-    return fail("Too many failed attempts. Please contact the organisers.", 429);
-  }
+  if (!user) return NextResponse.json({ ok: false, reason: "Please log in first." }, { status: 401 });
 
   const form = await request.formData().catch(() => null);
-  const file = form?.get("pdf");
-  const fullName = String(form?.get("fullName") ?? "").trim();
-  const admissionNumber = String(form?.get("admissionNumber") ?? "").trim();
-
-  if (!(file instanceof File)) return fail("Attach your admission letter PDF.");
-  if (file.size > MAX_PDF_BYTES) return fail("The PDF must be under 5 MB.");
-
-  const bytes = Buffer.from(await file.arrayBuffer());
-  if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") return fail("That file isn't a PDF.");
-
-  async function reject(reason: string) {
-    await admin.from("verifications").upsert({
-      user_id: user!.id,
-      status: "rejected",
-      method: "admission_pdf",
-      attempts: attempts + 1,
-      reason,
-      updated_at: new Date().toISOString(),
-    });
-    const left = MAX_ATTEMPTS - attempts - 1;
-    return fail(left > 0 ? `${reason} (${left} attempt${left === 1 ? "" : "s"} left)` : reason, 422);
+  const pdf = form?.get("pdf");
+  const photo = form?.get("photo");
+  const file = pdf instanceof File ? pdf : photo instanceof File ? photo : null;
+  if (!file) {
+    return NextResponse.json({ ok: false, reason: "Attach your admit card PDF or a photo of it." }, { status: 400 });
   }
 
-  let text: string;
+  const admin = createAdminClient();
+
+  const deps: VerificationDeps = {
+    expectedYear: (process.env.ADMISSION_YEAR ?? String(new Date().getFullYear())).trim(),
+
+    async getExisting(userId) {
+      const { data } = await admin
+        .from("verifications")
+        .select("status, attempts")
+        .eq("user_id", userId)
+        .maybeSingle();
+      return data;
+    },
+
+    async isDuplicate(userId, regNo, sha256) {
+      const filters = [`pdf_sha256.eq.${sha256}`];
+      if (regNo && /^T\d{5}$/.test(regNo)) filters.push(`reg_no.eq.${regNo}`);
+      const { data } = await admin
+        .from("verifications")
+        .select("user_id")
+        .neq("user_id", userId)
+        .in("status", LIVE_STATUSES)
+        .or(filters.join(","))
+        .limit(1);
+      return !!data?.length;
+    },
+
+    async readPdf(bytes) {
+      const doc = await getDocumentProxy(bytes);
+      const [{ text }, meta] = await Promise.all([
+        extractText(doc, { mergePages: true }),
+        getMeta(doc).catch(() => ({ info: {} as Record<string, unknown> })),
+      ]);
+      const producer = typeof meta.info?.Producer === "string" ? meta.info.Producer : null;
+      return { text, producer };
+    },
+
+    async storeProof(userId, bytes, kind) {
+      // Admit cards hold personal data: encrypted at rest, private bucket, admins only.
+      const path = `${userId}/${kind}-${Date.now()}.bin`;
+      const { error } = await admin.storage
+        .from("admission-proofs")
+        .upload(path, encryptPhoto(bytes), { contentType: "application/octet-stream" });
+      if (error) throw new Error(error.message);
+      return path;
+    },
+
+    async save(userId, row) {
+      const { error } = await admin
+        .from("verifications")
+        .upsert({ user_id: userId, ...row, updated_at: new Date().toISOString() });
+      if (error) throw new Error(error.message);
+    },
+  };
+
   try {
-    const pdf = await getDocumentProxy(new Uint8Array(bytes));
-    ({ text } = await extractText(pdf, { mergePages: true }));
+    const result = await handleCardUpload(deps, {
+      userId: user.id,
+      kind: pdf instanceof File ? "pdf" : "photo",
+      bytes: Buffer.from(await file.arrayBuffer()),
+    });
+    if (!result.ok) return NextResponse.json({ ok: false, reason: result.reason }, { status: result.httpStatus });
+    return NextResponse.json(result);
   } catch {
-    return reject("We couldn't open this PDF. Try downloading it again from the college portal.");
+    return NextResponse.json({ ok: false, reason: "Something went wrong. Please try again." }, { status: 500 });
   }
-
-  const result = checkAdmissionText(text, { fullName, admissionNumber }, admissionConfigFromEnv());
-  if (!result.ok) return reject(result.reason);
-
-  const sha256 = createHash("sha256").update(bytes).digest("hex");
-  const admission = normalizeAdmissionNumber(admissionNumber);
-
-  const { data: dupes } = await admin
-    .from("verifications")
-    .select("user_id")
-    .eq("status", "verified")
-    .neq("user_id", user.id)
-    .or(`admission_number.eq.${admission},pdf_sha256.eq.${sha256}`)
-    .limit(1);
-  if (dupes && dupes.length > 0) {
-    return reject("This admission letter is already linked to another account.");
-  }
-
-  const pdfPath = `${user.id}.pdf`;
-  const { error: uploadError } = await admin.storage
-    .from("admission-proofs")
-    .upload(pdfPath, bytes, { contentType: "application/pdf", upsert: true });
-  if (uploadError) return fail("Couldn't save your letter. Please try again.", 500);
-
-  const { error } = await admin.from("verifications").upsert({
-    user_id: user.id,
-    status: "verified",
-    method: "admission_pdf",
-    admission_number: admission,
-    pdf_path: pdfPath,
-    pdf_sha256: sha256,
-    attempts: attempts + 1,
-    reason: null,
-    updated_at: new Date().toISOString(),
-  });
-  // The unique indexes catch a race between two accounts using the same letter.
-  if (error) return reject("This admission letter is already linked to another account.");
-
-  return NextResponse.json({ ok: true });
 }
