@@ -1,379 +1,76 @@
-# 💌 Campus Hearts
+# 💘🤝 Campus Buddy
 
-<div align="center">
-  <img src="./public/CampusHeartLogo.png" alt="Campus Hearts Logo" width="120" height="120" />
-  
-  ### A dating app exclusively for your college.
-  
-  *Verified college-email login, swipe-style exploring, and mutual love requests*
-  
-  [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat&logo=next.js)](https://nextjs.org/)
-  [![React](https://img.shields.io/badge/React-19.2.3-61DAFB?style=flat&logo=react)](https://react.dev/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
-  [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ECF8E?style=flat&logo=supabase)](https://supabase.com/)
-</div>
+Dating **and** friendship for **Goa College of Engineering** students. Mobile-first, hand-drawn, verified students only.
+
+- **Freshers** (no ID card or working college email yet) log in with any email and upload their **GEC Provisional Admit Card**. The portal PDF is verified instantly; a photo of the card goes to an admin.
+- **Seniors** log in with their **@gec.ac.in** email and are verified automatically.
+- Pick **Dating, Friends or Both**. Browse a searchable grid or swipe. Like each other → **match → in-app chat**.
 
 ---
 
-## 📖 Overview
+## Features
 
-**Campus Hearts** is the go-to place to find a partner for **freshers night**. It's campus-only, built around a compatibility quiz, and keeps photos locked down.
+| Area | What it does |
+| --- | --- |
+| Verification | Parses the admit card PDF (`lib/admitCard.ts`): checks it's GEC, a Provisional Admit Card, the current intake, FE, and reads reg no, name, DOB, gender, branch, GEC email. Portal PDFs (made by `xhtml2pdf`) verify instantly; anything else (Word-made, edited, photos) goes to the admin queue. One card = one account (unique reg no + file hash). 5 failed attempts max. |
+| Identity lock | Gender and age come from the card and can't be changed (DB trigger). Name, branch and year are pre-filled. |
+| Dating & friends | "Here for" Dating / Friends / Both + "Interested in" Men / Women / Everyone. Friends mode shows everyone; dating only shows people who are interested in each other. Enforced in the database (`discover_kinds`). |
+| Browse | Grid with search, sort (best match, newest, age) and filters (here for, branch, year, age, hometown, religion, looking for, height, languages). Or a swipe deck. Filters live in the URL. |
+| Matching | 10-question quiz → compatibility % (`lib/matching.ts`). Soft partner preferences: people who fit come first, everyone else after. |
+| Likes | "Likes you" and "Sent" tabs. Like back = instant match. Pass or withdraw. 100 likes/day. |
+| Chat | Real-time chat (Supabase Realtime), read receipts, unread badges, 20 messages/min limit. WhatsApp number is never shown unless *you* tap "Share my WhatsApp" in that chat. |
+| Photos | AES-256-GCM encrypted in a private bucket, served only to people allowed to see the profile, drawn on a canvas **only while held**, watermarked with the viewer's name, hidden on app switch / screenshot keys / print. No website can fully block phone screenshots, but leaks are traceable. |
+| Safety | Block, report (auto-blocks), unmatch, pause profile, delete account. Banned users are locked out and hidden everywhere. |
+| Admin | `/admin` for emails in `ADMIN_EMAILS`: card review queue (view card, approve/reject), reports (ban/dismiss), user search (ban/unban), live stats. |
+| Mobile | Bottom tab bar, bottom-sheet menus, 44px+ tap targets, safe areas, 16px+ inputs (no iOS zoom), installable PWA. |
 
-**How it works:**
-1. **Sign in** with any email (OTP, no passwords).
-2. **Verify**:
-   - Seniors with a college email are verified automatically.
-   - Freshers, who have no ID card or activated college email yet, upload the **admission letter PDF**. The server reads the PDF and checks the college name, intake year, the student's name and admission number. One letter can only be linked to one account.
-3. **Build a profile**: 3 photos, a bio, interests, and a 10-question **freshers night quiz**.
-4. **Browse or swipe**: see verified profiles of the opposite gender as a searchable grid or as a swipe deck.
-   - **Search** by name, hometown or bio. **Sort** by best match, newest or age.
-   - **Filter** by branch, year, age, hometown ("from"), religion, height, languages and what they're looking for.
-   - The quiz also asks **who you'd like to meet** (year, branch, age, height, religion, languages). People who fit come first; if nobody fits, everyone else is still shown after them.
-   - Like someone. If they like you back, it's an **instant match**. Otherwise they get a love request they can accept or decline.
-5. On a match, both sides can unlock each other's WhatsApp number.
+## Tech
 
----
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Supabase (Postgres, Auth, Storage, Realtime) · Vitest · Playwright.
 
-## ✨ Key Features
+## Setup
 
-- **📄 Admission-letter verification**: `/api/verify-admission` extracts the text of the PDF (with `unpdf`) and auto-approves it if it matches. It is rate-limited to 5 attempts, and the PDF hash and admission number are unique per verified account. Letters are kept in a private bucket for audit.
-- **🎯 Compatibility matching**: `lib/matching.ts` scores each pair from 0 to 100:
-  - weighted quiz agreement (single-choice answers must match; scale answers score by distance),
-  - interest overlap (Jaccard),
-  - a small penalty for a different year of study,
-  - an optional "looking for the same thing" dealbreaker.
-- **🔐 Encrypted, hold-to-view photos**:
-  - Photos are AES-256-GCM encrypted server-side and stored in a **private** bucket.
-  - They're only decrypted by `/api/photos/...` for someone allowed to see that profile, with `no-store` caching.
-  - On screen they're drawn into a `<canvas>` (never an `<img>`) only **while the viewer presses and holds**.
-  - Each view is watermarked with the viewer's name and the time.
-  - The photo is cleared instantly on release, app switch, window blur or screenshot shortcuts (PrintScreen / Cmd+Shift+3/4/5).
-  - Photos are hidden when printing.
-- **💌 Mutual likes**: a database trigger turns two-way likes into an accepted match automatically.
-- **📱 Phone reveal on match**: numbers are only returned by `get_match_phone_number` for accepted matches.
+1. **Install:** `npm install`
+2. **Supabase:** create a project, then run the migrations in order in the SQL editor (or `supabase db push`):
+   `0001_init.sql` → `0002_freshers.sql` → `0003_browse_fields.sql` → `0004_campus_buddy.sql`.
+   Then in the dashboard: **Database → Replication**, make sure `messages` is in the `supabase_realtime` publication (0004 adds it if the publication exists).
+3. **Auth:** enable Email OTP. Set up custom SMTP (the built-in email service only sends a few emails per hour, which is not enough for 100+ students).
+4. **Environment:** create `.env.local`:
 
-> **Honest limitation:** no website can fully stop a phone's own screenshot button or someone photographing the screen with a second phone. Campus Hearts makes saving photos hard and makes any leak **traceable** through the watermark.
-
----
-
-## 🛠️ Tech Stack
-
-Campus Hearts is built with modern, production-ready technologies:
-
-### Frontend Framework
-- **[Next.js 16.1.6](https://nextjs.org/)** - React framework with App Router
-- **[React 19.2.3](https://react.dev/)** - Latest React with concurrent features
-- **[TypeScript 5.x](https://www.typescriptlang.org/)** - Type-safe JavaScript
-
-### UI & Styling
-- **[Tailwind CSS 4.x](https://tailwindcss.com/)** - Utility-first CSS framework
-- **[HeroUI/React 2.8.8](https://www.heroui.com/)** - Beautiful React component library
-- **[Framer Motion 12.29.3](https://www.framer.com/motion/)** - Production-ready animation library
-- **[GSAP 3.14.2](https://greensock.com/gsap/)** - Professional-grade animation platform
-
-### Backend
-- **[Supabase](https://supabase.com/)** - Postgres database, email-OTP Auth, Storage for profile photos, and Row Level Security to enforce who can see whom
-- **[@supabase/ssr](https://supabase.com/docs/guides/auth/server-side/nextjs)** - Session handling in Next.js Server Components and route proxy
-
-### 3D & Graphics
-- **[Three.js 0.182.0](https://threejs.org/)** - 3D graphics library
-- **[@react-three/fiber 9.5.0](https://docs.pmnd.rs/react-three-fiber)** - React renderer for Three.js
-
-### Development Tools
-- **ESLint** - Code linting and quality
-- **PostCSS** - CSS processing and optimization
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-Before you begin, ensure you have the following installed:
-- **Node.js** (v20.x or higher recommended)
-- **npm** (v10.x or higher) or **yarn** / **pnpm** / **bun**
-- **Git** for version control
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/jjf2009/CampusHearts.git
-   cd CampusHearts
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   # or
-   bun install
-   ```
-
-3. **Set up Supabase**
-
-   Create a project at [supabase.com](https://supabase.com), then run these in the Supabase SQL editor, in order (or use `supabase db push`):
-   - [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). Before running it, edit `is_college_email` to check your college's real email domain.
-   - [`supabase/migrations/0002_freshers.sql`](./supabase/migrations/0002_freshers.sql): admission-letter verification, both-ways browsing, mutual matches, and private photo storage.
-   - [`supabase/migrations/0003_browse_fields.sql`](./supabase/migrations/0003_browse_fields.sql): age, branch, religion, height and languages for search and filters. Edit the option lists in `lib/profileOptions.ts` to fit your college.
-
-   > Photos uploaded before `0002` were stored unencrypted in a public bucket. Ask those users to re-upload their photos from the Profile page.
-
-4. **Set up environment variables**
-
-   Create `.env.local`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-   # Server-only. Never expose this to the browser.
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-   # Admission-letter checks: comma-separated names that appear on your college's letters
-   COLLEGE_NAME_KEYWORDS=Goa College of Engineering,GEC
-   ADMISSION_YEAR=2026
-
-   # 32 random bytes, base64. Generate with: openssl rand -base64 32
-   # Keep it safe: if you lose it, every stored photo becomes unreadable.
-   PHOTO_ENCRYPTION_KEY=
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key   # server only
+   PHOTO_ENCRYPTION_KEY=                             # openssl rand -base64 32 — back it up!
+   ADMISSION_YEAR=2026                               # the intake that can verify with an admit card
+   ADMIN_EMAILS=you@gec.ac.in,friend@gmail.com
    ```
 
-5. **Run the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
-   # or
-   bun dev
-   ```
+5. **Run:** `npm run dev` → http://localhost:3000
 
-6. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
+Branch names live in `lib/profileOptions.ts`, and card branch names are mapped in `mapBranch` (`lib/admitCard.ts`).
 
-The page will auto-reload when you make changes. You can start editing by modifying files in the `app` directory.
+## Tests
 
----
-
-## 📁 Project Structure
-
-```
-CampusHearts/
-├── app/                      # Next.js App Router directory
-│   ├── (auth)/              # Auth routes (grouped)
-│   │   ├── login/           # Email-OTP login/signup
-│   │   └── signup/          # Redirects to /login (OTP handles both)
-│   ├── (main)/              # Gated app routes (grouped, share AppNavbar)
-│   │   ├── explore/         # Female-only swipe/explore feed
-│   │   ├── requests/        # Male-only incoming love requests
-│   │   └── matches/         # Accepted matches + phone reveal
-│   ├── profile/             # Edit own profile
-│   ├── profile-setup/       # First-time onboarding form
-│   ├── layout.tsx           # Root layout component
-│   ├── page.tsx             # Home page
-│   ├── providers.tsx        # Global providers (theme, etc.)
-│   └── globals.css          # Global styles
-│
-├── components/               # Reusable React components
-│   ├── auth/                # Login component
-│   ├── explore/              # Swipe deck
-│   ├── requests/              # Love request list
-│   ├── matches/                # Match list + phone reveal
-│   ├── profile/                # Profile edit form
-│   ├── home/                  # Landing page sections
-│   ├── AppNavbar.tsx          # Nav for logged-in app routes
-│   ├── Navbar.tsx             # Landing page navbar
-│   └── Footer.tsx             # Footer component
-│
-├── lib/supabase/             # Supabase browser/server client helpers + shared types
-├── supabase/migrations/      # SQL: schema, RLS policies, storage bucket, email gate
-├── proxy.ts                  # Route protection (auth/gender/profile-completion gating)
-│
-├── public/                  # Static assets
-│   └── CampusHeartLogo.png # Application logo
-│
-├── hero.ts                  # HeroUI configuration
-├── next.config.ts           # Next.js configuration
-├── tsconfig.json            # TypeScript configuration
-├── tailwind.config.ts       # Tailwind CSS configuration
-├── postcss.config.mjs       # PostCSS configuration
-├── eslint.config.mjs        # ESLint configuration
-└── package.json             # Project dependencies
+```bash
+npm run lint && npm run typecheck
+npm test            # unit tests: admit-card parsing, verification flow, matching, filters, crypto, routing, admin
+npm run test:db     # migrations + RLS/trigger tests on a throwaway Postgres (local binaries or DATABASE_URL)
+npm run test:e2e    # Playwright, phone + desktop, using the dev-only /dev/preview screens
 ```
 
----
+The tests use **synthetic** admit cards (`tests/fixtures/makeCard.ts`). Never commit real student cards.
+See [`docs/TESTING.md`](docs/TESTING.md) for the manual phone checklist and launch checklist.
 
-## 💻 Development
+## Project layout
 
-### Available Scripts
-
-- **`npm run dev`** - Start development server at http://localhost:3000
-- **`npm run build`** - Build the application for production
-- **`npm run start`** - Start the production server
-- **`npm run lint`** - Run ESLint to check code quality
-
-### Code Quality
-
-This project uses:
-- **TypeScript** for type safety
-- **ESLint** for code linting
-- **Strict mode** enabled for better error catching
-
-### Coding Guidelines
-
-1. **Component Structure**
-   - Use functional components with hooks
-   - Keep components small and focused on a single responsibility
-   - Use TypeScript for all new components
-
-2. **Styling**
-   - Use Tailwind CSS utility classes
-   - Follow the established color palette (rose, peach, lavender, cream, blush)
-   - Maintain consistent spacing and typography
-
-3. **Animation**
-   - Use Framer Motion for UI animations
-   - Use GSAP for complex timeline animations
-   - Keep animations subtle and purposeful
-
-4. **File Organization**
-   - Group related components in directories
-   - Use route groups in the `app` directory for logical separation
-   - Keep component files focused and maintainable
-
----
-
-## 🎨 Design Philosophy
-
-Campus Hearts follows a **warm, inviting, and calm** design aesthetic:
-
-### Color Palette
-- **Rose** (#F6B5BE) - Primary accent for love and connection
-- **Peach** (#FFD7C2) - Warmth and friendliness
-- **Lavender** (#E6D5F5) - Calm and serenity
-- **Cream** (#FFF9F5) - Soft, neutral background
-- **Charcoal** (#333333) - Readable text
-
-### Typography
-- **Font Family**: Serif for headings (elegance), Sans-serif for body (readability)
-- **Font Weights**: Medium (500) for headings, Normal (400) for body
-
-### Animations
-- Smooth, intentional transitions
-- Floating and fading effects for visual interest
-- Staggered animations for list items
-- Scroll-triggered animations for engagement
-
----
-
-## 🚢 Deployment
-
-### Deploy on Vercel (Recommended)
-
-The easiest way to deploy Campus Hearts is using the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme):
-
-1. Push your code to a Git repository (GitHub, GitLab, or Bitbucket)
-2. Import your repository to Vercel
-3. Configure environment variables
-4. Deploy!
-
-Vercel automatically detects Next.js and configures the build settings.
-
-### Other Deployment Options
-
-- **[Netlify](https://www.netlify.com/)** - Alternative static hosting
-- **[Railway](https://railway.app/)** - Full-stack deployment
-- **[Docker](https://www.docker.com/)** - Containerized deployment
-
-For detailed deployment instructions, check the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying).
-
----
-
-## 🤝 Contributing
-
-We welcome contributions to Campus Hearts! Here's how you can help:
-
-### How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Commit with clear messages**
-   ```bash
-   git commit -m "Add amazing feature"
-   ```
-5. **Push to your branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-6. **Open a Pull Request**
-
-### Contribution Guidelines
-
-- Follow the existing code style and conventions
-- Write clear, descriptive commit messages
-- Test your changes thoroughly
-- Update documentation as needed
-- Be respectful and constructive in discussions
-
-### Areas for Contribution
-
-- 🐛 Bug fixes
-- ✨ New features
-- 📝 Documentation improvements
-- 🎨 UI/UX enhancements
-- ♿ Accessibility improvements
-- 🌐 Internationalization
-
----
-
-## 📚 Learn More
-
-### Next.js Resources
-- [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API
-- [Learn Next.js](https://nextjs.org/learn) - Interactive Next.js tutorial
-- [Next.js GitHub](https://github.com/vercel/next.js) - Feedback and contributions welcome
-
-### Related Technologies
-- [React Documentation](https://react.dev/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [Framer Motion Docs](https://www.framer.com/motion/)
-
----
-
-## 📄 License
-
-This project is currently **private** and proprietary. All rights reserved.
-
-For licensing inquiries, please contact the repository owner.
-
----
-
-## 🙏 Acknowledgments
-
-- Built with love for college students in Goa
-- Inspired by the slow movement and intentional living
-- Designed to bring back meaningful connections in the digital age
-
----
-
-## 📞 Contact & Support
-
-- **Repository**: [github.com/jjf2009/CampusHearts](https://github.com/jjf2009/CampusHearts)
-- **Issues**: [Report a bug or request a feature](https://github.com/jjf2009/CampusHearts/issues)
-
----
-
-<div align="center">
-  <p><strong>Made with 💌 for genuine connections</strong></p>
-  <p><em>Real connection takes time — and that's okay.</em></p>
-</div>
+```
+app/                 pages (App Router) and API routes
+  (main)/            logged-in app: explore, people/[id], likes, chats, profile, settings
+  admin/             admin dashboard
+  api/               verify-admission, photos, account, admin
+components/          UI (explore, chat, likes, onboarding, safety, admin, ui)
+lib/                 admitCard, verification, matching, quiz, browse, routing, photoCrypto, actions
+supabase/migrations  schema, RLS, triggers
+tests/               unit + database tests     e2e/   Playwright
+```
